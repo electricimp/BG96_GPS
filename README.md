@@ -2,6 +2,8 @@
 
 Library to access GPS location data for the imp006. 
 
+To add this library to your project, add `#require "BG96_GPS.device.lib.nut:0.0.1"` to the top of your device code
+
 ## BG96_GPS Usage ##
 
 BG96_GPS is a singleton and has no constructor. There is no need to create an instance or initialize. All of the methods listed below should be called on BG96_GPS directly. 
