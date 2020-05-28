@@ -8,6 +8,38 @@ To add this library to your project, add `#require "BG96_GPS.device.lib.nut:0.0.
 
 BG96_GPS is a singleton and has no constructor. There is no need to create an instance or initialize. All of the methods listed below should be called on BG96_GPS directly. 
 
+## BG96_GPS Example ##
+
+A very simple example that enables the GNSS and then polls and prints out the fix every 10 seconds:
+
+```
+#require "BG96_GPS.device.lib.nut:0.0.1"
+
+function onLocation(result) {
+    if ("fix" in result) {
+        server.log("got fix:");
+        foreach (key, value in result) {
+            server.log(key + ": " + value);
+            if ((typeof value) == "table") {
+                foreach (k, v in value) {
+                    server.log(" " + k + ": " + v);
+                } 
+            }
+        }
+    } else {
+        server.error(result.error);
+    }
+}
+
+server.log("enabling GNSS and getting fix ...");
+BG96_GPS.enableGNSS({
+    // Note: Non-assist cold fix time can be up to 12.5 min if new almanacs and ephemerides need to be fetched
+    "maxPosTime" : 90, 
+    "checkFreq" : 10,
+    "onLocation" : onLocation
+});
+```
+
 ## BG96_GPS Methods ##
 
 ### isGNSSEnabled() ###
