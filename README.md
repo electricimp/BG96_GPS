@@ -39,6 +39,9 @@ BG96_GPS.enableGNSS({
     "onLocation" : onLocation
 });
 ```
+## BG96_GPS Antenna ##
+
+The BG96 will need to be connected to an external antenna for GNSS operation. There are many GNSS antennas available, for simplicity and performance an active patch antenna with integrated ground plane is preferrable. We've had good results with  the Molex 206640, but there are others such as Taoglas.
 
 ## BG96_GPS Methods ##
 
