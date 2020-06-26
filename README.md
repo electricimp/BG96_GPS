@@ -65,7 +65,7 @@ Boolean &mdash; whether GNSS is enabled.
 
 This method turns on GNSS with the specified options. This method will run asynchronously; please use the *onEnabled* and/or *onLocation* callbacks to handle errors and schedule next tasks.
 
-The BG96 modem must be powered on to enable GNSS. If the modem is not up when *enableGNSS()* is a called, the impOS method [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) will be triggered for the `cell0` interface and the [**interface**](https://developer.electricimp.com/api/interface) object returned by this call will be stored. This [**interface**](https://developer.electricimp.com/api/interface) object can be accessed by calling *getNetOpenObject()*, and can be cleared by calling *clearNetOpenObject()* or by passing a parameter with a value of `true` when calling *disableGNSS()*.
+The BG96 modem must be powered on to enable GNSS. If the modem is not up when *enableGNSS()* is a called, the impOS method [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) will be triggered for the `cell0` interface and the [**interface**](https://developer.electricimp.com/api/interface) object returned by this call will be stored. This [**interface**](https://developer.electricimp.com/api/interface) object can be accessed by calling [*getNetOpenObject()*](#getnetopenobject), and can be cleared by calling [*clearNetOpenObject()*](#clearnetopenobject) or by passing a parameter with a value of `true` when calling [*disableGNSS()*](#disablegnssclearnetopen).
 
 #### Parameters ####
 
@@ -109,7 +109,7 @@ This method turns off GNSS and cancels all active location polling.
 
 | Parameter | Type | Required? | Description |
 | --- | --- | --- | --- |
-| *clearNetOpen* | Boolean | No | Clears the [**interface**](https://developer.electricimp.com/api/interface) object created if [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) was called during *enableGNSS()*. Default: `true` |
+| *clearNetOpen* | Boolean | No | Clears the [**interface**](https://developer.electricimp.com/api/interface) object created if [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) was called during [*enableGNSS()*](#enablegnssoptions). Default: `true` |
 
 #### Return Value ####
 
