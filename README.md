@@ -10,7 +10,7 @@ bg_96.device.lib.nut
 
 **and paste it at the top of your device code**
 
-**IMPORTANT** This library has been released in alpha form to support early testers of impOS™ 43. An exception will be thrown if this library is run on an earlier version of impOS.
+**IMPORTANT** This library has been released in alpha form to support early testers of impOS™ 43. An exception will be thrown if this library is run on an earlier version of impOS. If you are working with impOS 42, use the version of this library in the [*master* branch](https://github.com/electricimp/BG96_GPS/tree/master).
 
 ## BG96 GPS Usage ##
 
