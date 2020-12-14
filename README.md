@@ -5,7 +5,7 @@ This library provides your application with access to GPS location data retrieve
 **To include this library to your project, copy the content of the file**
 
 ```
-bg_96.device.lib.nut
+bg96_gps.device.lib.nut
 ```
 
 **and paste it at the top of your device code**
