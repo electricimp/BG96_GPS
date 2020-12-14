@@ -1,14 +1,16 @@
-# BG96 GPS #
+# BG96 GPS 0.1.0 #
 
-This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006 module.
+This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
-**To include this library to your project, add**
+**To include this library to your project, copy the content of the file**
 
 ```
-#require "BG96_GPS.device.lib.nut:0.0.1"
+bg_96.device.lib.nut
 ```
 
-**at the top of your device code**
+**and paste it at the top of your device code**
+
+**IMPORTANT** This library has been released in alpha form to support early testers of impOS™ 43. An exception will be thrown if this library is run on an earlier version of impOS.
 
 ## BG96 GPS Usage ##
 
@@ -16,11 +18,9 @@ The library provides a singleton, *BG_96*, and therefore has no constructor. The
 
 ### Usage Example ###
 
-This is a very simple example that enables GNSS on the bG96 and then polls and prints out the fix every ten seconds:
+This is a very simple example that enables GNSS on the BG96 and then polls and prints out the location fix every ten seconds:
 
 ```squirrel
-#require "BG96_GPS.device.lib.nut:0.0.1"
-
 function onLocation(result) {
     if ("fix" in result) {
         server.log("Got fix:");
@@ -40,7 +40,8 @@ function onLocation(result) {
 server.log("Enabling GNSS and getting fix...");
 
 BG96_GPS.enableGNSS({
-    // Note: Non-assist cold fix time can be up to 12.5 min if new almanacs and ephemerides need to be fetched
+    // NOTE Non-assist cold fix time can be up to 12.5 mins
+    //      if new almanacs and ephemerides need to be fetched
     "maxPosTime" : 90,
     "checkFreq" : 10,
     "onLocation" : onLocation
@@ -59,13 +60,13 @@ A helper method used to determine if GNSS is currently enabled.
 
 #### Return Value ####
 
-Boolean &mdash; whether GNSS is enabled.
+Boolean &mdash; whether GNSS is enabled (`true`) or disabled (`false`).
 
 ### enableGNSS(*[options]*) ###
 
 This method turns on GNSS with the specified options. This method will run asynchronously; please use the *onEnabled* and/or *onLocation* callbacks to handle errors and schedule next tasks.
 
-The BG96 modem must be powered on to enable GNSS. If the modem is not up when *enableGNSS()* is a called, the impOS method [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) will be triggered for the `cell0` interface and the [**interface**](https://developer.electricimp.com/api/interface) object returned by this call will be stored. This [**interface**](https://developer.electricimp.com/api/interface) object can be accessed by calling [*getNetOpenObject()*](#getnetopenobject), and can be cleared by calling [*clearNetOpenObject()*](#clearnetopenobject) or by passing a parameter with a value of `true` when calling [*disableGNSS()*](#disablegnssclearnetopen).
+The BG96 modem must be powered on to enable GNSS.
 
 #### Parameters ####
 
@@ -85,7 +86,9 @@ The BG96 modem must be powered on to enable GNSS. If the modem is not up when *e
 | *retryTime* | Integer or Float | How long to wait between retries when powering up the modem. Default: 1 |
 | *locMode* | Integer | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), below, for more details. Default: 2 |
 | *onEnabled* | Function | Callback to be triggered when GNSS has been enabled. This function has one parameter which will contain an error message or be `null` if no error was encountered. Default: no callback |
-| *onLocation* | Function | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix*. Default: no callback |
+| *onLocation* | Function | Callback to be triggered when GNSS location data is ready. This function has one parameter: a table that may contain the keys *error* or *fix*. Default: no callback |
+| *useAssist* | Boolean | Enable assist without loading new assist data. New in library version 0.1.0. Default: `false` |
+| *assistData* | Blob | GPS fix assist data. New in library version 0.1.0. Default: no data |
 
 #### Location Mode Values ####
 
@@ -101,56 +104,34 @@ The following are the allowed values for the *locMode* option. Each is a member 
 
 Nothing.
 
-### disableGNSS(*[clearNetOpen]*) ###
+### disableGNSS() ###
 
 This method turns off GNSS and cancels all active location polling.
 
-#### Parameters ####
-
-| Parameter | Type | Required? | Description |
-| --- | --- | --- | --- |
-| *clearNetOpen* | Boolean | No | Clears the [**interface**](https://developer.electricimp.com/api/interface) object created if [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) was called during [*enableGNSS()*](#enablegnssoptions). Default: `true` |
-
 #### Return Value ####
 
-Boolean &mdash; whether GNSS was successfully disabled.
+Boolean &mdash; whether GNSS was successfully disabled (`true`) or not (`false`).
 
-### getLocation(*[options]*) ###
+### getLocation(*options*) ###
 
-This method can be used to start polling for location data or to make a single request for location data.
+This method can be used to start polling for location data or to make a single request for location data. While most of the keys you can include in the table passed into *options*, you **must** include *onLocation* and a suitable callback function.
 
-**Note** This method will not enable GNSS or the BG96 modem. If GNSS is not turned on this request will return an error. If no *onLocation* callback is provided, a single location request will be made and the result will be returned immediately and the polling option will be ignored.
+This method will not enable GNSS or the BG96 modem. If GNSS is not turned on this request will return an error.
 
 #### Parameters ####
 
 | Parameter | Type | Required? | Description |
 | --- | --- | --- | --- |
-| *options* | Table | No | Configuration options for the location request, see [**Location Options**](#location-options), below, for details. If no table is passed in, or a partial table is provided, default values will be used |
+| *options* | Table | Yes | Configuration options for the location request, see [**Location Options**](#location-options), below, for details |
 
 #### Location Options ####
 
-| Key | Value Type | Description |
-| --- | --- | --- |
-| *locMode* | Integer | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), above, for more details. Default: 2 |
-| *poll* | Boolean | If `false` a single location request will be triggered, otherwise a location polling loop will be started. Default: `true` |
-| *checkFreq* | Integer | If configured to poll, how often in seconds to check for fix data. Default: 1 |
-| *onLocation* | Function | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix*. Default: no callback |
-
-#### Return Value ####
-
-Table or `null` &mdash; If no *onLocation* callback is included, a table with the keys *error* or *fix* will be returned, otherwise results will be passed to the *onLocation* callback and this function will return `null`.
-
-### getNetOpenObject() ###
-
-If the impOS method [**imp.net.open()**](https://developer.electricimp.com/api/imp/net/open) has been triggered by this library, use this method to obtain the [**interface**](https://developer.electricimp.com/api/interface) object created by that call. If the library has not made a call to power up the BG96 modem, this object will be `null`.
-
-#### Return Value ####
-
-[**interface**](https://developer.electricimp.com/api/interface) object or `null`.
-
-### clearNetOpenObject() ###
-
-This method sets the stored [**interface**](https://developer.electricimp.com/api/interface) object to `null`.
+| Key | Value Type | Required | Description |
+| --- | --- | --- | --- |
+| *mode* | Integer | No | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), above, for more details. Default: 2 |
+| *poll* | Boolean | No | If `false` a single location request will be triggered, otherwise a location polling loop will be started. Default: `true` |
+| *checkFreq* | Integer | No |  If configured to poll, how often in seconds to check for fix data. Default: 1 |
+| *onLocation* | Function | Yes | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix*. Default: no callback |
 
 #### Return Value ####
 
@@ -172,4 +153,4 @@ Nothing.
 
 ## License ##
 
-The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2019-20 Electric Imp, Inc.
+The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2020 Twilio.
