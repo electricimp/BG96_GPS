@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.0.1",
+    VERSION   = "0.1.0",
 
     _debug    = false,
     _locTimer = null,
