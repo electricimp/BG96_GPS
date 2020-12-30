@@ -90,10 +90,17 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.0",
+    VERSION   = "0.1.1",
 
-    _debug    = false,
-    _locTimer = null,
+    /*
+     * PUBLIC PROPERTIES
+     */
+    debug = false,
+
+    /*
+     * PRIVATE FUNCTIONS
+     */
+     _locTimer = null,
     _session   = null,
     _minSuppportedImpOS = 43.0,
     _impOSVersion = null,
@@ -101,7 +108,6 @@ BG96_GPS <- {
     /*
      * PUBLIC FUNCTIONS
      */
-
     isGNSSEnabled = function() {
         _checkOS();
 
@@ -234,7 +240,7 @@ BG96_GPS <- {
 
     // Enable or disable debug logging
     enableDebugLogging = function(enable) {
-        _debug = enable;
+        debug = enable;
     },
 
     /*
@@ -350,7 +356,7 @@ BG96_GPS <- {
 
     // Creates a log if device is online and debug flag is set to true
     _log = function(msg) {
-        if (_debug && server.isconnected()) server.log(msg);
+        if (debug && server.isconnected()) server.log(msg);
     }
 
     // Check we're running on a correct system
