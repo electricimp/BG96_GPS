@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.0 #
+# BG96 GPS 0.1.1 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
