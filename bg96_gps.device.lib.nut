@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.1",
+    VERSION   = "0.1.2",
 
     /*
      * PUBLIC PROPERTIES
@@ -139,7 +139,7 @@ BG96_GPS <- {
         if (!isGNSSEnabled()) {
             if (_session == null) {
                 _session = hardware.gnss.open(function(t) {
-                    _log("[BG96_GPS] Session readiness now " + t.ready);
+                    _log("[BG96_GPS] Session is " + (t.ready == 0 ? "not ready" : "ready"));
                     if (t.ready == 1) enableGNSS(opts);
                 }.bindenv(this));
                 return;
@@ -147,13 +147,12 @@ BG96_GPS <- {
 
             if (assistData) {
                 _session.assist.load(function(t) {
-                    _log("[BG96_GPS] Assist data loaded " + t.status);
-                    if ("restart" in t) _log("[BG96_GPS] Restart required = " + t.restart);
-                    local t2 = _session.assist.read();
-                    _log("[BG96_GPS] xtradatadurtime " + t2.xtradatadurtime);
-                    _log("[BG96_GPS] injecteddatatime " + t2.injecteddatatime);
+                    _log("[BG96_GPS] Assist data " + (t.status == 0 ? "loaded" : "not loaded"));
+                    if (t.status != 0) _log("[BG96_GPS] Error: " + t.message);
+                    if ("restart" in t) _log("[BG96_GPS] Modem restarted? " + (t.restart == 0 ? "No" : "Yes"));
+                    local t2 = isAssistDataValid();
                     opts.assistData = null;
-                    if (!"useAssist" in opts) opts.useAssist <- true;
+                    if (!("useAssist" in opts)) opts.useAssist <- true;
                     enableGNSS(opts);
                 }.bindenv(this), assistData);
                 return;
@@ -161,7 +160,8 @@ BG96_GPS <- {
 
             if (useAssist) {
                 local t = _session.assist.enable(); // use impOS time
-                _log("[BG96_GPS] Assist enable " + t.status);
+                _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
+                if (t.status != 0) _log("[BG96_GPS] Error: " + t.message);
             }
 
             local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
@@ -236,6 +236,15 @@ BG96_GPS <- {
                 onLocation(loc);
             });
         }
+    },
+
+    isAssistDataValid = function() {
+        _checkOS();
+
+        local t = _session.assist.read();
+        _log("[BG96_GPS] Assist data is valid for " + t.xtradatadurtime + " minutes");
+        _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
+        return (t.xtradatadurtime > 0);
     },
 
     // Enable or disable debug logging

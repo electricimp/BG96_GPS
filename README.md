@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.1 #
+# BG96 GPS 0.1.2 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -10,7 +10,7 @@ bg96_gps.device.lib.nut
 
 **and paste it at the top of your device code**
 
-**IMPORTANT** This library has been released in alpha form to support early testers of impOS™ 43. An exception will be thrown if this library is run on an earlier version of impOS. If you are working with impOS 42, use the version of this library in the [*master* branch](https://github.com/electricimp/BG96_GPS/tree/master).
+**IMPORTANT** This library has been released in alpha form to support early testers of impOS™ 43. Release notes for this version are [below](#release-notes). An exception will be thrown if this library is run on an earlier version of impOS. If you are working with impOS 42, use the version of this library in the [*master* branch](https://github.com/electricimp/BG96_GPS/tree/master).
 
 ## BG96 GPS Usage ##
 
@@ -137,6 +137,14 @@ This method will not enable GNSS or the BG96 modem. If GNSS is not turned on thi
 
 Nothing.
 
+### isAssistDataValid() ###
+
+Check if the BG96’s assist data is valid or not present.
+
+#### Return Value ####
+
+Boolean — `true` if the data is valid, otherwise `false`.
+
 ### enableDebugLogging(*enable*) ###
 
 Use this method to enable/disable library debug logging.
@@ -150,6 +158,17 @@ Use this method to enable/disable library debug logging.
 #### Return Value ####
 
 Nothing.
+
+## Release Notes ##
+
+- 0.1.2
+    - Add *isAssistDataValid()* function.
+    - Prettify log messages.
+    - Fix an issue preventing loaded assist data being enabled.
+- 0.1.1
+    - Make *debug* a public property.
+- 0.1.0
+    - Initial release supporting impOS 43 GNSS API.
 
 ## License ##
 
