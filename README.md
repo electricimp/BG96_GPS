@@ -143,7 +143,7 @@ Check if the BG96’s assist data is valid or not present.
 
 #### Return Value ####
 
-Boolean — `true` if the data is valid, otherwise `false`.
+Table — contains the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
 
 ### enableDebugLogging(*enable*) ###
 
