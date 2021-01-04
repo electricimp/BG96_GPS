@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.2 #
+# BG96 GPS 0.1.3 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -161,6 +161,8 @@ Nothing.
 
 ## Release Notes ##
 
+- 0.1.3
+    - Return table from *isAssistDataValid()*, not boolean.
 - 0.1.2
     - Add *isAssistDataValid()* function.
     - Prettify log messages.

@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.2",
+    VERSION   = "0.1.3",
 
     /*
      * PUBLIC PROPERTIES
@@ -244,7 +244,7 @@ BG96_GPS <- {
         local t = _session.assist.read();
         _log("[BG96_GPS] Assist data is valid for " + t.xtradatadurtime + " minutes");
         _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
-        return (t.xtradatadurtime > 0);
+        return (t.xtradatadurtime > 0 ? {"time": t.xtradatadurtime, "valid": true} : {"valid": false});
     },
 
     // Enable or disable debug logging
