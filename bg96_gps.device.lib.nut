@@ -167,7 +167,7 @@ BG96_GPS <- {
             local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
 
             if (resp.status != 0) {
-                local stratus = resp.status.tostring();
+                local status = resp.status.tostring();
                 if (stratus != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
                     local err = "[BG96_GPS] Error enabling GNSS: " + resp.status;
                     _log(err);
