@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.3 #
+# BG96 GPS 0.1.4 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -161,6 +161,8 @@ Nothing.
 
 ## Release Notes ##
 
+- 0.1.4
+    - Fix variable name: `stratus` -> `status`
 - 0.1.3
     - Return table from *isAssistDataValid()*, not boolean.
 - 0.1.2
@@ -174,4 +176,4 @@ Nothing.
 
 ## License ##
 
-The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2020 Twilio.
+The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2021 Twilio.

@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.3",
+    VERSION   = "0.1.4",
 
     /*
      * PUBLIC PROPERTIES
@@ -168,7 +168,7 @@ BG96_GPS <- {
 
             if (resp.status != 0) {
                 local status = resp.status.tostring();
-                if (stratus != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
+                if (status != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
                     local err = "[BG96_GPS] Error enabling GNSS: " + resp.status;
                     _log(err);
                     if (onEnabled != null) onEnabled(err);
