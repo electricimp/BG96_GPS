@@ -162,7 +162,6 @@ BG96_GPS <- {
             if (useAssist) {
                 local t = _session.assist.enable(); // use impOS time
                 _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
-                if (t.status != 0) _log("[BG96_GPS] Error: " + t.message);
             }
 
             local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
@@ -249,8 +248,10 @@ BG96_GPS <- {
         _checkOS();
 
         local t = _session.assist.read();
-        _log("[BG96_GPS] Assist data is valid for " + t.xtradatadurtime + " minutes");
-        _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
+        if (t.status == 0) {
+            _log("[BG96_GPS] Assist data is valid for " + t.xtradatadurtime + " minutes");
+            _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
+        }
         return (t.xtradatadurtime > 0 ? {"time": t.xtradatadurtime, "valid": true} : {"valid": false});
     },
 

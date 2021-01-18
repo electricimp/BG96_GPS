@@ -170,9 +170,10 @@ Nothing.
 ## Release Notes ##
 
 - 0.1.4
+    - Add *deleteAssistData()**
     - Fix variable name: `stratus` -> `status`
     - Correctly cancel location polling timer when GNSS disabled.
-    - Add *deleteAssistData()**
+    - Remove return table keys removed from imp API.
 - 0.1.3
     - Return table from *isAssistDataValid()*, not boolean.
 - 0.1.2
