@@ -204,6 +204,7 @@ BG96_GPS <- {
 
         // Always cancel location timer
         _cancelLocTimer();
+        imp.cancelwakeup(_pollTimer);
 
         if (isGNSSEnabled()) {
             local resp = _session.disable();
@@ -211,9 +212,6 @@ BG96_GPS <- {
                 _log("[BG96_GPS] Error disabling GNSS: " + resp.error);
                 return false;
             }
-
-            // Clear the poll timer
-            imp.cancelwakeup(_pollTimer);
         }
 
         _session = null;
