@@ -163,6 +163,7 @@ Nothing.
 
 - 0.1.4
     - Fix variable name: `stratus` -> `status`
+    - Correctly cancel location polling timer when GNSS disabled.
 - 0.1.3
     - Return table from *isAssistDataValid()*, not boolean.
 - 0.1.2

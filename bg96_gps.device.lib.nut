@@ -104,6 +104,7 @@ BG96_GPS <- {
     _session   = null,
     _minSuppportedImpOS = 43.0,
     _impOSVersion = null,
+    _pollTimer = null,
 
     /*
      * PUBLIC FUNCTIONS
@@ -181,7 +182,8 @@ BG96_GPS <- {
                 if (onEnabled != null) onEnabled(null);
                 if (onLocation != null) {
                     // If there is no delay returns stale loc on first 2 (1sec) requests
-                    imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
+                    if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
+                    _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
                         _pollLoc(locMode, checkFreq, onLocation);
                     }.bindenv(this));
                 }
@@ -189,7 +191,8 @@ BG96_GPS <- {
         } else {
             if (onEnabled != null) onEnabled(null);
             if (onLocation != null) {
-                imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
+                if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
+                _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
                     _pollLoc(locMode, checkFreq, onLocation);
                 }.bindenv(this));
             }
@@ -209,6 +212,9 @@ BG96_GPS <- {
                 _log("[BG96_GPS] Error disabling GNSS: " + resp.error);
                 return false;
             }
+
+            // Clear the poll timer
+            imp.cancelwakeup(_pollTimer);
         }
 
         _session = null;
