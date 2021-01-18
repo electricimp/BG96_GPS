@@ -145,6 +145,14 @@ Check if the BG96’s assist data is valid or not present.
 
 Table — contains the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
 
+### deleteAssistData() ###
+
+Delete any installed assist data. **Note** This call will also disable GNSS.
+
+#### Return Value ####
+
+Boolean — `true` if GNSS was disabled and the assist data was removed, or `false` if *either* of these events was unsuccessful.
+
 ### enableDebugLogging(*enable*) ###
 
 Use this method to enable/disable library debug logging.
@@ -164,6 +172,7 @@ Nothing.
 - 0.1.4
     - Fix variable name: `stratus` -> `status`
     - Correctly cancel location polling timer when GNSS disabled.
+    - Add *deleteAssistData()**
 - 0.1.3
     - Return table from *isAssistDataValid()*, not boolean.
 - 0.1.2

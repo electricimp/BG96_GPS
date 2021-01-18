@@ -244,6 +244,7 @@ BG96_GPS <- {
         }
     },
 
+    // Is the assist data good?
     isAssistDataValid = function() {
         _checkOS();
 
@@ -256,6 +257,24 @@ BG96_GPS <- {
     // Enable or disable debug logging
     enableDebugLogging = function(enable) {
         debug = enable;
+    },
+
+    // Delete any existing assist data
+    // ***** UNTESTED *****
+    deleteAssistData = function(mode = 3) {
+        _checkOS();
+
+        if (disableGNSS()) {
+            local t = _session.assist.reset(mode);
+            if (t.status == 0) {
+                _log("[BG96_GPS] Assist data deleted");
+                return true;
+            } else {
+                _log("[BG96_GPS] Could not delete assist data");
+            }
+        }
+
+        return false;
     },
 
     /*
