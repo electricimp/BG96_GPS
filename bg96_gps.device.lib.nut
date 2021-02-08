@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.4",
+    VERSION   = "0.1.5",
 
     /*
      * PUBLIC PROPERTIES
@@ -149,9 +149,9 @@ BG96_GPS <- {
             if (assistData) {
                 _session.assist.load(function(t) {
                     _log("[BG96_GPS] Assist data " + (t.status == 0 ? "loaded" : "not loaded"));
-                    if (t.status != 0) _log("[BG96_GPS] Error: " + t.message);
+                    if (t.status != 0) _log("[BG96_GPS] Error: " + t.message, true);
                     if ("restart" in t) _log("[BG96_GPS] Modem restarted? " + (t.restart == 0 ? "No" : "Yes"));
-                    local t2 = isAssistDataValid();
+                    isAssistDataValid();
                     opts.assistData = null;
                     if (!("useAssist" in opts)) opts.useAssist <- true;
                     enableGNSS(opts);
@@ -160,8 +160,19 @@ BG96_GPS <- {
             }
 
             if (useAssist) {
-                local t = _session.assist.enable(); // use impOS time
-                _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
+                // FROM 0.1.5 -- check we have assist data before proceeding
+                // This will be the case if 'enableGNSS()' called with 'useAssist' set true,
+                // but 'assistData' is null or passed bad data
+                local t = _session.assist.read();
+                if (t.status == 0) {
+                    // There is assist data present, so proceed to enable
+                    t = _session.assist.enable(); // use impOS time
+                    _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
+                } else {
+                    local err = "[BG96_GPS] Assist data not present -- cannot enable Assist";
+                    _log(err, true);
+                    if (onEnabled != null) onEnabled(err);
+                }
             }
 
             local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
@@ -170,7 +181,7 @@ BG96_GPS <- {
                 local status = resp.status.tostring();
                 if (status != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
                     local err = "[BG96_GPS] Error enabling GNSS: " + resp.status;
-                    _log(err);
+                    _log(err, true);
                     if (onEnabled != null) onEnabled(err);
                     return;
                 }
@@ -246,11 +257,12 @@ BG96_GPS <- {
         _checkOS();
 
         local t = _session.assist.read();
-        if (t.status == 0) {
-            _log("[BG96_GPS] Assist data is valid for " + t.xtradatadurtime + " minutes");
+        local valid = (t.status == 0);
+        if (valid) {
+            _log("[BG96_GPS] Assist data is valid for " + _getValidTime(t.injecteddatatime) + " minutes");
             _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
         }
-        return (t.xtradatadurtime > 0 ? {"time": t.xtradatadurtime, "valid": true} : {"valid": false});
+        return (valid ? {"time": _getValidTime(t.injecteddatatime), "valid": valid} : {"valid": valid});
     },
 
     // Enable or disable debug logging
@@ -388,8 +400,14 @@ BG96_GPS <- {
     },
 
     // Creates a log if device is online and debug flag is set to true
-    _log = function(msg) {
-        if (debug && server.isconnected()) server.log(msg);
+    _log = function(msg, isError = false) {
+        if (debug && server.isconnected()) {
+            if (isError) {
+                server.error(msg);
+            } else {
+                server.log(msg);
+            }
+        }
     }
 
     // Check we're running on a correct system
@@ -405,4 +423,33 @@ BG96_GPS <- {
             throw "BG96_GPS 0.1.0 requires impOS 43 or above";
         }
     }
+
+    // FROM 0.1.5
+    // Get assist data remaining validity period in mins
+    // 'uploadDate' is <= now, format: YYYY/MM/DD,hh:mm:ss
+    _getValidTime = function(uploadDate) {
+        local ps = split(uploadDate, ",");
+        local ds = split(ps[0], "/");
+        local ts = split(ps[1], ":");
+        local now = date();
+        local dd = 0;
+
+        // A valid upload date can't be more than 7 days (100080 mins) ago
+        if (now.day < 7 && ds[1].tointeger() > now.day) {
+            // Flip into the previous month
+            local ms = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            local n = ms[ds[1].tointeger()];
+            if (ds[1].tointeger() == 2 && ((now.year % 4 == 0) && ((now.year % 100 > 0) || (now.year % 400 == 0)))) n += 1;
+            dd = now.day - (n - ds[2].tointeger());
+        } else {
+            dd = now.day - ds[2].tointeger();
+        }
+
+        // Return now - uploadDate in minutes
+        dd *= 1440;
+        local mu = ts[1].tointeger() + 60 * ts[0].tointeger();
+        local mn = now.min + 60 * now.hour;
+        return 10080 - dd - mn + mu;
+    }
+
 }

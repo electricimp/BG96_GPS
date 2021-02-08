@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.4 #
+# BG96 GPS 0.1.5 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -169,6 +169,9 @@ Nothing.
 
 ## Release Notes ##
 
+- 0.1.5
+    - Catch attempts to use assist data without data having been uploaded.
+    - Mitigate BG96 issue where the assist data duration returned by modem is always 0 or 10080.
 - 0.1.4
     - Add *deleteAssistData()**
     - Fix variable name: `stratus` -> `status`
