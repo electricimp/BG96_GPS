@@ -172,8 +172,9 @@ Nothing.
 - 0.1.5
     - Catch attempts to use assist data without data having been uploaded.
     - Mitigate BG96 issue where the assist data duration returned by modem is always 0 or 10080.
+    - Rework *deleteAssistData()* to support deletion when a GNSS session has not yet been established.
 - 0.1.4
-    - Add *deleteAssistData()**
+    - Add *deleteAssistData()*.
     - Fix variable name: `stratus` -> `status`
     - Correctly cancel location polling timer when GNSS disabled.
     - Remove return table keys removed from imp API.

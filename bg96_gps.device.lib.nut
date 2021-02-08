@@ -112,9 +112,8 @@ BG96_GPS <- {
     isGNSSEnabled = function() {
         _checkOS();
 
-        if (_session == null) {
-            return false;
-        }
+        if (_session == null) return false;
+
         try {
             local resp = _session.getstate();
             return (resp.state == 1);
@@ -166,10 +165,10 @@ BG96_GPS <- {
                 local t = _session.assist.read();
                 if (t.status == 0) {
                     // There is assist data present, so proceed to enable
-                    t = _session.assist.enable(); // use impOS time
+                    t = _session.assist.enable();
                     _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
                 } else {
-                    local err = "[BG96_GPS] Assist data not present -- cannot enable Assist";
+                    local err = format("[BG96_GPS] Assist data not present -- cannot enable Assist (status %i)", t.status);
                     _log(err, true);
                     if (onEnabled != null) onEnabled(err);
                 }
@@ -215,7 +214,7 @@ BG96_GPS <- {
 
         // Always cancel location timer
         _cancelLocTimer();
-        imp.cancelwakeup(_pollTimer);
+        if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
 
         if (isGNSSEnabled()) {
             local resp = _session.disable();
@@ -275,17 +274,25 @@ BG96_GPS <- {
     deleteAssistData = function(mode = 3) {
         _checkOS();
 
-        if (disableGNSS()) {
-            local t = _session.assist.reset(mode);
-            if (t.status == 0) {
-                _log("[BG96_GPS] Assist data deleted");
-                return true;
+        if (isGNSSEnabled()) {
+            // GNSS enabled, so disable before deleting
+            local resp = _session.disable();
+            if (resp.status != 0) {
+                _log(format("[BG96_GPS] Error disabling GNSS: %i -- could not delete assist data" resp.error), true);
             } else {
-                _log("[BG96_GPS] Could not delete assist data");
+                // GNSS now disabled, so we can proceed with deletion
+                _deleteAssist(mode);
+            }
+        } else {
+            if (_session == null) {
+                // We have to make a session in order to delete the assist data
+                _session = hardware.gnss.open(function(t) {
+                    if (t.ready == 1) _deleteAssist(mode);
+                }.bindenv(this));;
+            } else {
+                _deleteAssist(mode);
             }
         }
-
-        return false;
     },
 
     /*
@@ -408,7 +415,7 @@ BG96_GPS <- {
                 server.log(msg);
             }
         }
-    }
+    },
 
     // Check we're running on a correct system
     _checkOS = function() {
@@ -422,7 +429,7 @@ BG96_GPS <- {
         } catch (exp) {
             throw "BG96_GPS 0.1.0 requires impOS 43 or above";
         }
-    }
+    },
 
     // FROM 0.1.5
     // Get assist data remaining validity period in mins
@@ -434,7 +441,7 @@ BG96_GPS <- {
         local now = date();
         local dd = 0;
 
-        // A valid upload date can't be more than 7 days (100080 mins) ago
+        // A valid upload date can't be more than 7 days (10080 mins) ago
         if (now.day < 7 && ds[1].tointeger() > now.day) {
             // Flip into the previous month
             local ms = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -450,6 +457,17 @@ BG96_GPS <- {
         local mu = ts[1].tointeger() + 60 * ts[0].tointeger();
         local mn = now.min + 60 * now.hour;
         return 10080 - dd - mn + mu;
+    },
+
+    // FROM 0.1.5
+    _deleteAssist = function(mode) {
+        local t = _session.assist.reset(mode);
+        if (t.status == 0) {
+            _log("[BG96_GPS] Assist data deleted");
+        } else {
+            local err = format("[BG96_GPS] Could not delete assist data (status %i)", t.status);
+            _log(err, true);
+        }
     }
 
 }
