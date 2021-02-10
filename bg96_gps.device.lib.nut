@@ -96,6 +96,7 @@ BG96_GPS <- {
      * PUBLIC PROPERTIES
      */
     debug = false,
+    onNotify = null,
 
     /*
      * PRIVATE FUNCTIONS
@@ -140,7 +141,11 @@ BG96_GPS <- {
             if (_session == null) {
                 _session = hardware.gnss.open(function(t) {
                     _log("[BG96_GPS] Session is " + (t.ready == 0 ? "not ready" : "ready"));
-                    if (t.ready == 1) enableGNSS(opts);
+                    if (t.ready == 1) {
+                        enableGNSS(opts);
+                    } else {
+                        _notify("[BG96_GPS] Session is not ready", 1);
+                    }
                 }.bindenv(this));
                 return;
             }
@@ -417,6 +422,16 @@ BG96_GPS <- {
         }
     },
 
+    _nofify = function(msg, code = 999) {
+        if (onNotify != null) {
+            if (code == 999) {
+                onNotify({"message": msg});
+            } else {
+                onNotify({"error": msg, "errCode": code});
+            }
+        }
+    },
+
     // Check we're running on a correct system
     _checkOS = function() {
         if (_impOSVersion == null) {
@@ -427,7 +442,7 @@ BG96_GPS <- {
         try {
             assert(_impOSVersion >= _minSuppportedImpOS);
         } catch (exp) {
-            throw "BG96_GPS 0.1.0 requires impOS 43 or above";
+            throw "BG96_GPS 0.1.x requires impOS 43 or above";
         }
     },
 
