@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.5",
+    VERSION   = "0.1.6",
 
     /*
      * PUBLIC PROPERTIES
@@ -449,20 +449,20 @@ BG96_GPS <- {
     // FROM 0.1.5
     // Get assist data remaining validity period in mins
     // 'uploadDate' is <= now, format: YYYY/MM/DD,hh:mm:ss
-    _getValidTime = function(uploadDate) {
+    _getValidTime = function(uploadDate, now = null) {
         local ps = split(uploadDate, ",");
         local ds = split(ps[0], "/");
         local ts = split(ps[1], ":");
-        local now = date();
+        if (now == null) now = date();
         local dd = 0;
 
         // A valid upload date can't be more than 7 days (10080 mins) ago
-        if (now.day < 7 && ds[1].tointeger() > now.day) {
+        if (now.day < 7 && ds[2].tointeger() > now.day) {
             // Flip into the previous month
             local ms = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-            local n = ms[ds[1].tointeger()];
+            local n = ms[ds[1].tointeger() - 1];
             if (ds[1].tointeger() == 2 && ((now.year % 4 == 0) && ((now.year % 100 > 0) || (now.year % 400 == 0)))) n += 1;
-            dd = now.day - (n - ds[2].tointeger());
+            dd = now.day - ds[2].tointeger() + n;
         } else {
             dd = now.day - ds[2].tointeger();
         }
@@ -471,7 +471,7 @@ BG96_GPS <- {
         dd *= 1440;
         local mu = ts[1].tointeger() + 60 * ts[0].tointeger();
         local mn = now.min + 60 * now.hour;
-        return 10080 - dd - mn + mu;
+        return dd + mn - mu;
     },
 
     // FROM 0.1.5
