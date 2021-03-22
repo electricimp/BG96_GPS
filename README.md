@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.6 #
+# BG96 GPS 0.1.7 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -145,13 +145,24 @@ Check if the BG96’s assist data is valid or not present.
 
 Table — contains the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
 
-### deleteAssistData() ###
+If the validity could not be determined, eg. the modem is off, the table will contain a single key, *error*.
+
+### deleteAssistData(*[mode][, callback]*) ###
 
 Delete any installed assist data. **Note** This call will also disable GNSS.
 
+#### Parameters ####
+
+| Parameter | Type | Required? | Description |
+| --- | --- | --- | --- |
+| *mode* | Integer | No | The desired reset mode (see [**gnss-session.assist.reset()**](https://developer.electricimp.com/api/gnss-session/assist/reset)) |
+| *callback* | Function | No | Optional reporting callback |
+
+If you supply a callback, it has a single parameter, which receives operation status. This table will be empty on success; otherwise it contains a single key, *error*.
+
 #### Return Value ####
 
-Boolean — `true` if GNSS was disabled and the assist data was removed, or `false` if *either* of these events was unsuccessful.
+Nothing.
 
 ### enableDebugLogging(*enable*) ###
 
@@ -169,6 +180,10 @@ Nothing.
 
 ## Release Notes ##
 
+- 0.1.7
+    - Add initial unit tests.
+    - Add callback and improvements to *deleteAssistData()*.
+    - Add improvements to *isAssistDataValid()*.
 - 0.1.6
     - Bug fixes for calculation of assist data validity period.
 - 0.1.5

@@ -1,6 +1,6 @@
 /*
  * BG96_GPS library
- * Copyright 2020 Twilio
+ * Copyright 2021 Twilio
  *
  * MIT License
  * SPDX-License-Identifier: MIT
@@ -90,7 +90,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.6",
+    VERSION   = "0.1.7",
 
     /*
      * PUBLIC PROPERTIES
@@ -101,7 +101,7 @@ BG96_GPS <- {
     /*
      * PRIVATE FUNCTIONS
      */
-     _locTimer = null,
+    _locTimer = null,
     _session   = null,
     _minSuppportedImpOS = 43.0,
     _impOSVersion = null,
@@ -196,7 +196,7 @@ BG96_GPS <- {
                 if (onEnabled != null) onEnabled(null);
                 if (onLocation != null) {
                     // If there is no delay returns stale loc on first 2 (1sec) requests
-                    if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
+                    _cancelPollTimer();
                     _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
                         _pollLoc(locMode, checkFreq, onLocation);
                     }.bindenv(this));
@@ -205,7 +205,7 @@ BG96_GPS <- {
         } else {
             if (onEnabled != null) onEnabled(null);
             if (onLocation != null) {
-                if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
+                _cancelPollTimer();
                 _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
                     _pollLoc(locMode, checkFreq, onLocation);
                 }.bindenv(this));
@@ -217,9 +217,9 @@ BG96_GPS <- {
     disableGNSS = function() {
         _checkOS();
 
-        // Always cancel location timer
+        // Always cancel location timers
         _cancelLocTimer();
-        if (_pollTimer != null) imp.cancelwakeup(_pollTimer);
+        _cancelPollTimer();
 
         if (isGNSSEnabled()) {
             local resp = _session.disable();
@@ -260,13 +260,17 @@ BG96_GPS <- {
     isAssistDataValid = function() {
         _checkOS();
 
-        local t = _session.assist.read();
-        local valid = (t.status == 0);
-        if (valid) {
-            _log("[BG96_GPS] Assist data is valid for " + _getValidTime(t.injecteddatatime) + " minutes");
-            _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
+        if (_session != null) {
+            local t = _session.assist.read();
+            local valid = (t.status == 0);
+            if (valid) {
+                _log("[BG96_GPS] Assist data is valid for " + _getValidTime(t.injecteddatatime) + " minutes");
+                _log("[BG96_GPS] Assist data became valid on " + t.injecteddatatime);
+            }
+            return (valid ? {"time": _getValidTime(t.injecteddatatime), "valid": valid} : {"valid": valid});
+        } else {
+            return {"error": "GNSS not enabled"};
         }
-        return (valid ? {"time": _getValidTime(t.injecteddatatime), "valid": valid} : {"valid": valid});
     },
 
     // Enable or disable debug logging
@@ -275,27 +279,29 @@ BG96_GPS <- {
     },
 
     // Delete any existing assist data
-    // ***** UNTESTED *****
-    deleteAssistData = function(mode = 3) {
+    deleteAssistData = function(mode = 3, cb = null) {
         _checkOS();
+
+        if (cb != null && typeof cb != "function") cb = null;
 
         if (isGNSSEnabled()) {
             // GNSS enabled, so disable before deleting
             local resp = _session.disable();
             if (resp.status != 0) {
                 _log(format("[BG96_GPS] Error disabling GNSS: %i -- could not delete assist data" resp.error), true);
+                if (cb != null) cb({"error":"Could not delete assist data"});
             } else {
                 // GNSS now disabled, so we can proceed with deletion
-                _deleteAssist(mode);
+                _deleteAssist(mode, cb);
             }
         } else {
             if (_session == null) {
                 // We have to make a session in order to delete the assist data
                 _session = hardware.gnss.open(function(t) {
-                    if (t.ready == 1) _deleteAssist(mode);
-                }.bindenv(this));;
+                    if (t.ready == 1) _deleteAssist(mode, cb);
+                }.bindenv(this));
             } else {
-                _deleteAssist(mode);
+                _deleteAssist(mode, cb);
             }
         }
     },
@@ -362,6 +368,13 @@ BG96_GPS <- {
         if (_locTimer != null) {
             imp.cancelwakeup(_locTimer);
             _locTimer = null;
+        }
+    },
+
+    _cancelPollTimer = function() {
+        if (_pollTimer != null) {
+            imp.cancelwakeup(_pollTimer);
+            _pollTimer = null;
         }
     },
 
@@ -451,6 +464,7 @@ BG96_GPS <- {
     // 'uploadDate' is <= now, format: YYYY/MM/DD,hh:mm:ss
     _getValidTime = function(uploadDate, now = null) {
         local ps = split(uploadDate, ",");
+        if (ps.len() != 2) return -99;
         local ds = split(ps[0], "/");
         local ts = split(ps[1], ":");
         if (now == null) now = date();
@@ -475,13 +489,15 @@ BG96_GPS <- {
     },
 
     // FROM 0.1.5
-    _deleteAssist = function(mode) {
+    _deleteAssist = function(mode, cb) {
         local t = _session.assist.reset(mode);
         if (t.status == 0) {
             _log("[BG96_GPS] Assist data deleted");
+            if (cb != null) cb({});
         } else {
             local err = format("[BG96_GPS] Could not delete assist data (status %i)", t.status);
             _log(err, true);
+            if (cb != null) cb({"error": "Could not delete assist data"});
         }
     }
 
