@@ -2,32 +2,38 @@ class GNSSTestCase extends ImpTestCase {
 
     function setUp() {
 
-        return Promise(function(resolve, reject) {
+        // TEST WE CAN ENABLE GNSS
+        local p = Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({
                 "maxPosTime" : 120,
                 "checkFreq" : 60,
                 "onEnabled": function(result) {
-                    if (result != null) {
-                        reject();
+                    if ("error" in result) {
+                        reject("Error code: " + result.errcode.tostring());
                     } else {
-                        resolve();
+                        resolve(result.event);
                     }
                 }
             });
         }.bindenv(this));
+
+        return p;
     }
 
     function tearDown() {
 
-        //local result = BG96_GPS.disableGNSS();
-        //this.assert(result);
+        // TEST WE CAN DISABLE GNSS
+        local result = BG96_GPS.disableGNSS();
+        this.assert(result);
 
+        // CHECK DISABLED GNSS IS TRAPPED IN GETLOCATION() CALLS
         return Promise(function(resolve, reject) {
-            BG96_GPS.deleteAssistData(3, function(result) {
-                if ("error" in result) {
-                    reject();
-                } else {
-                    resolve();
+            BG96_GPS.getLocation({
+                "onLocation": function(result) {
+                    if ("error" in result) {
+                        // THIS WHAT WE WANT TO SEE
+                        resolve(result.error);
+                    }
                 }
             });
         }.bindenv(this));
@@ -36,18 +42,39 @@ class GNSSTestCase extends ImpTestCase {
 
     function testGetLocation() {
 
-        // Correctly reject attempts w/o an onLocation callback
-        local result = BG96_GPS.getLocation();
-        this.assert(result.error != null);
-
-        // Async call check
+        // TEST WE CAN GET A SINGLE GNSS LOCATION
         return Promise(function(resolve, reject) {
             BG96_GPS.getLocation({
                 "onLocation": function(result) {
-                    if ("fix" in result) {
-                        resolve();
+                    if ("error" in result) {
+                        if (result.error == "GPS fix not available") {
+                            resolve(result.error);
+                        } else {
+                            reject(result.error);
+                        }
+                    } else if ("fix" in result) {
+                        resolve(result.fix);
                     }
                 }
+            });
+        }.bindenv(this));
+    }
+
+    function testGetLocationWaitForFix() {
+
+        // TEST WE CAN GET A GNSS LOCATION
+        // IN THIS CASE ('ops.waitFix = true') NO GPS FIX IS NOT AN ERROR
+        return Promise(function(resolve, reject) {
+            BG96_GPS.getLocation({
+                "onLocation": function(result) {
+                    if ("error" in result) {
+                        // GPS FIX MAY BE CALLED REPEATEDLY -- NOT REALLY A LIB FAIL
+                        reject(result.error);
+                    } else if ("fix" in result) {
+                        resolve(result.fix);
+                    }
+                },
+                "waitFix": true
             });
         }.bindenv(this));
     }
@@ -57,19 +84,21 @@ class GNSSTestCase extends ImpTestCase {
         if (adb == null) return;
         this.info("Got assist data");
 
+        // TEST WE CAN DISABLE GNSS
         local result = BG96_GPS.disableGNSS();
         this.assert(result);
 
+        // TEST WE CAN LOAD GNSS ASSIST DATA
         return Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({
                 "maxPosTime" : 120,
                 "checkFreq" : 60,
                 "assistData": adb,
                 "onEnabled": function(result) {
-                    if (result != null) {
-                        reject();
+                    if ("error" in result) {
+                        reject("Error code: " + result.errcode.tostring());
                     } else {
-                        resolve();
+                        resolve(result.event);
                     }
                 }
             });
@@ -78,6 +107,7 @@ class GNSSTestCase extends ImpTestCase {
 
     function testGetValidTime() {
 
+        // TEST _getValidTime()
         local testDate = "2021/03/20,16:00:00"
         local result = BG96_GPS._getValidTime(testDate);
         //this.info(result);

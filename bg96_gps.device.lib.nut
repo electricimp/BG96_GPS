@@ -82,6 +82,13 @@ enum BG96_GNSS_LOCATION_MODE {
     TWO     // <latitude>,<longitude> format: (-)dd.ddddd,(-)ddd.ddddd
 }
 
+enum BG96_RESET_MODE {
+    COLD_START          = 0, //	Delete all assistance data except gpsOneXTRA data. Enforce a cold start after starting GNSS
+    HOT_START           = 1, // Do not delete any data. Perform hot start if the conditions are permitted after starting GNSS
+    WARM_START          = 2, // Delete some related data. Perform warm start if the conditions are permitted after starting GNSS
+    DELETE_DATA         = 3  // Delete the gpsOneXTRA assistance data injected into GNSS engine
+}
+
 // Stale location data is often returned immediately after power up
 const BG96_GPS_EN_POLLING_TIMEOUT = 3;
 
@@ -90,13 +97,13 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.1.7",
+    VERSION   = "0.2.0",
 
     /*
      * PUBLIC PROPERTIES
      */
-    debug = false,
     onNotify = null,
+    debug = true,
 
     /*
      * PRIVATE FUNCTIONS
@@ -137,28 +144,42 @@ BG96_GPS <- {
         local assistData = ("assistData" in opts) ? opts.assistData : null;
         local useAssist  = ("useAssist" in opts) ? opts.useAssist : false;
 
+        // FROM 0.1.8
+        // Retain the main notification callback
+        if (onEnabled != null) onNotify = onEnabled;
+
         if (!isGNSSEnabled()) {
             if (_session == null) {
-                _session = hardware.gnss.open(function(t) {
-                    _log("[BG96_GPS] Session is " + (t.ready == 0 ? "not ready" : "ready"));
-                    if (t.ready == 1) {
+                try {
+                    // Open the session to the modem
+                    _session = hardware.gnss.open(function(t) {
+                        if (t.ready == 1) {
+                            enableGNSS(opts);
+                        } else {
+                            _notify("Session could not be opened", 0);
+                        }
+                    }.bindenv(this));
+                } catch(err) {
+                    // Throw caused by modem not yet ready when we open,
+                    // so pause a couple of seconds and re-try
+                    _notify("Modem not yet ready -- backing off for " + retryTime + "s", 0);
+                    imp.wakeup(retryTime, function() {
                         enableGNSS(opts);
-                    } else {
-                        _notify("[BG96_GPS] Session is not ready", 1);
-                    }
-                }.bindenv(this));
+                    }.bindenv(this));
+                }
                 return;
             }
 
             if (assistData) {
                 _session.assist.load(function(t) {
-                    _log("[BG96_GPS] Assist data " + (t.status == 0 ? "loaded" : "not loaded"));
-                    if (t.status != 0) _log("[BG96_GPS] Error: " + t.message, true);
-                    if ("restart" in t) _log("[BG96_GPS] Modem restarted? " + (t.restart == 0 ? "No" : "Yes"));
-                    isAssistDataValid();
-                    opts.assistData = null;
-                    if (!("useAssist" in opts)) opts.useAssist <- true;
-                    enableGNSS(opts);
+                    if (t.status != 0) {
+                        _notify("Assist data not loaded: " + t.message, t.status);
+                    } else {
+                        // Prep for re-entry into function
+                        opts.assistData = null;
+                        if (!("useAssist" in opts)) opts.useAssist <- true;
+                        enableGNSS(opts);
+                    }
                 }.bindenv(this), assistData);
                 return;
             }
@@ -170,46 +191,44 @@ BG96_GPS <- {
                 local t = _session.assist.read();
                 if (t.status == 0) {
                     // There is assist data present, so proceed to enable
+                    // NOTE This is best to do after a read()
                     t = _session.assist.enable();
-                    _log("[BG96_GPS] Assist " + (t.status == 0 ? "enabled" : "not enabled"));
+                    if (t.status != 0) {
+                        _notify("Could not enable assist", t.status);
+                    } else {
+                        /*
+                            TODO NXTGN issue:
+                            session.enable() returns status 509 if called right after session.assist.enable()
+                        */
+                    }
                 } else {
-                    local err = format("[BG96_GPS] Assist data not present -- cannot enable Assist (status %i)", t.status);
-                    _log(err, true);
-                    if (onEnabled != null) onEnabled(err);
+                    _notify("Assist data not present", t.status);
                 }
             }
 
             local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
-
             if (resp.status != 0) {
                 local status = resp.status.tostring();
                 if (status != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
-                    local err = "[BG96_GPS] Error enabling GNSS: " + resp.status;
-                    _log(err, true);
-                    if (onEnabled != null) onEnabled(err);
+                    _notify("Error enabling GNSS", resp.status);
                     return;
                 }
+
+                // Retry after 'retryTime'
                 imp.wakeup(retryTime, function() {
                     enableGNSS(opts);
-                }.bindenv(this))
-            } else {
-                if (onEnabled != null) onEnabled(null);
-                if (onLocation != null) {
-                    // If there is no delay returns stale loc on first 2 (1sec) requests
-                    _cancelPollTimer();
-                    _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
-                        _pollLoc(locMode, checkFreq, onLocation);
-                    }.bindenv(this));
-                }
-            }
-        } else {
-            if (onEnabled != null) onEnabled(null);
-            if (onLocation != null) {
-                _cancelPollTimer();
-                _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
-                    _pollLoc(locMode, checkFreq, onLocation);
                 }.bindenv(this));
+                return;
             }
+        }
+
+        _notify("GNSS enabled");
+        if (onLocation != null) {
+            // If there is no delay returns stale loc on first 2 (1sec) requests
+            _cancelPollTimer();
+            _pollTimer = imp.wakeup(BG96_GPS_EN_POLLING_TIMEOUT, function() {
+                _pollLoc(locMode, checkFreq, onLocation);
+            }.bindenv(this));
         }
     },
 
@@ -224,11 +243,12 @@ BG96_GPS <- {
         if (isGNSSEnabled()) {
             local resp = _session.disable();
             if (resp.status != 0) {
-                _log("[BG96_GPS] Error disabling GNSS: " + resp.error);
+                _notify("Could not disable GNSS", resp.status);
                 return false;
             }
         }
 
+        // Zap the session
         _session = null;
         return true;
     },
@@ -240,19 +260,22 @@ BG96_GPS <- {
         local mode       = ("mode" in opts) ? opts.mode : BG96_GNSS_LOCATION_MODE.ZERO;
         local checkFreq  = ("checkFreq" in opts) ? opts.checkFreq : BG96_GNSS_ON_DEFAULT.GET_LOC_FREQ_SEC;
         local onLocation = ("onLocation" in opts && typeof opts.onLocation == "function") ? opts.onLocation : null;
+        local waitFix    = ("waitFix" in opts) ? opts.waitFix : false;
 
-        // If we have no callback just return an error
-        if (onLocation == null) {
-            return { "error" : "onLocation callback required" };
-        }
-
-        if (poll) {
-            _pollLoc(mode, checkFreq, onLocation);
+        // Make sure we're enabled
+        if (isGNSSEnabled()) {
+            if (poll) {
+                _pollLoc(mode, checkFreq, onLocation);
+            } else {
+                _getLoc(mode, function(loc) {
+                    if (loc == null) {
+                        loc = waitFix ? {"fix" : "GPS fix not yet available"} : {"error" : "GPS fix not available"};
+                    }
+                    if (onLocation) onLocation(loc);
+                });
+            }
         } else {
-            _getLoc(mode, function(loc) {
-                if (loc == null) loc = { "error" : "GPS fix not available" };
-                onLocation(loc);
-            });
+            if (onLocation) onLocation({"error" : "GNSS not enabled"});
         }
     },
 
@@ -273,35 +296,33 @@ BG96_GPS <- {
         }
     },
 
-    // Enable or disable debug logging
-    enableDebugLogging = function(enable) {
-        debug = enable;
-    },
-
     // Delete any existing assist data
-    deleteAssistData = function(mode = 3, cb = null) {
+    deleteAssistData = function(mode = BG96_RESET_MODE.DELETE_DATA) {
         _checkOS();
 
-        if (cb != null && typeof cb != "function") cb = null;
-
-        if (isGNSSEnabled()) {
-            // GNSS enabled, so disable before deleting
-            local resp = _session.disable();
-            if (resp.status != 0) {
-                _log(format("[BG96_GPS] Error disabling GNSS: %i -- could not delete assist data" resp.error), true);
-                if (cb != null) cb({"error":"Could not delete assist data"});
-            } else {
-                // GNSS now disabled, so we can proceed with deletion
-                _deleteAssist(mode, cb);
+        if (_session == null) {
+            // We have to make a session in order to delete the assist data
+            try {
+                _session = hardware.gnss.open(function(t) {
+                    if (t.ready == 1) _deleteAssist(mode);
+                }.bindenv(this));
+            } catch(err) {
+                _notify("Modem not yet ready -- backing off for " + retryTime + "s", 0);
+                imp.wakeup(retryTime, function() {
+                    deleteAssistData(mode);
+                }.bindenv(this));
             }
         } else {
-            if (_session == null) {
-                // We have to make a session in order to delete the assist data
-                _session = hardware.gnss.open(function(t) {
-                    if (t.ready == 1) _deleteAssist(mode, cb);
-                }.bindenv(this));
-            } else {
-                _deleteAssist(mode, cb);
+            // We have a session, but GNSS may be enabled
+            if (isGNSSEnabled()) {
+                // GNSS enabled, so disable before deleting
+                local resp = _session.disable();
+                if (resp.status != 0) {
+                    _notify("Could not delete assist data", resp.status);
+                } else {
+                    // GNSS now disabled, so we can proceed with deletion
+                    _deleteAssist(mode);
+                }
             }
         }
     },
@@ -337,30 +358,34 @@ BG96_GPS <- {
         // fix (table/string): response data string if location parsing failed otherwise a table with
         // slots: cog, alt, fixType, time, numSats, lat, lon, spkm, spkn, utc, data, hdop
     _getLoc = function(mode, cb) {
-        _session.readposition(function(resp) {
-            local data = {};
-            if (resp.status != 0) {
-                // Look for expected errors
-                local errorCode = resp.status.tostring();
-                switch (errorCode) {
-                    case BG96_AT_ERROR_CODE.GPS_NO_FIX_NOW:
-                        _log("[BG96_GPS] GPS fix not available");
-                        return cb(null);
-                    case BG96_AT_ERROR_CODE.GPS_SESSION_NOT_ACTIVE:
-                        _log("[BG96_GPS] GPS not enabled.");
-                        return cb(data.error <- "GPS not enabled");
-                    default:
-                        _log("[BG96_GPS] GPS location request failed with error: " + errorCode);
-                        return cb(data.error <- "AT error code: " + errorCode);
+        try {
+            _session.readposition(function(resp) {
+                local data = {};
+                if (resp.status != 0) {
+                    // Look for expected errors
+                    local errorCode = resp.status.tostring();
+                    switch (errorCode) {
+                        case BG96_AT_ERROR_CODE.GPS_NO_FIX_NOW:
+                            _log("[BG96_GPS] GPS fix not available");
+                            return cb(null);
+                        case BG96_AT_ERROR_CODE.GPS_SESSION_NOT_ACTIVE:
+                            _log("[BG96_GPS] GPS not enabled.");
+                            return cb(data.error <- "GPS not enabled");
+                        default:
+                            _log("[BG96_GPS] GPS location request failed with error: " + errorCode);
+                            return cb(data.error <- "AT error code: " + errorCode);
+                    }
                 }
-            }
 
-            if (resp.status == 0 && "quectel" in resp) {
-                data.fix <- _parseLocData(resp.quectel, mode);
-            }
+                if (resp.status == 0 && "quectel" in resp) {
+                    data.fix <- _parseLocData(resp.quectel, mode);
+                }
 
-            cb(data);
-        }.bindenv(this), mode);
+                cb(data);
+            }.bindenv(this), mode);
+        } catch(err) {
+            cb({"error":err});
+        }
     },
 
     // Cancels location polling timer
@@ -392,7 +417,6 @@ BG96_GPS <- {
 
     // Parses location data into table based on mode
     _parseLocData = function(parsed, mode) {
-        _log("[BG96_GPS] Parsing location data");
         try {
             switch(mode) {
                 case BG96_GNSS_LOCATION_MODE.ZERO:
@@ -401,7 +425,7 @@ BG96_GPS <- {
                     // 190629.0,37.39540,-122.10232,1.0,16.0,2,188.18,0.0,0.0,031219,09
                 case BG96_GNSS_LOCATION_MODE.ONE:
                     // 190629.0,3723.723831,N,12206.139526,W,1.0,16.0,2,188.18,0.0,0.0,031219,09
-                     return {
+                    return {
                         "utc"     : parsed.utc,
                         "lat"     : parsed.latitude,
                         "lon"     : parsed.longitude,
@@ -435,12 +459,14 @@ BG96_GPS <- {
         }
     },
 
-    _nofify = function(msg, code = 999) {
+    // General notification poster
+    _notify = function(msg, code = 999) {
         if (onNotify != null) {
+            msg = "[BG96 GPS] " + msg;
             if (code == 999) {
-                onNotify({"message": msg});
+                onNotify({"event": msg});
             } else {
-                onNotify({"error": msg, "errCode": code});
+                onNotify({"error": msg, "errcode": code});
             }
         }
     },
@@ -462,6 +488,7 @@ BG96_GPS <- {
     // FROM 0.1.5
     // Get assist data remaining validity period in mins
     // 'uploadDate' is <= now, format: YYYY/MM/DD,hh:mm:ss
+    // Returns -99 on error
     _getValidTime = function(uploadDate, now = null) {
         local ps = split(uploadDate, ",");
         if (ps.len() != 2) return -99;
@@ -473,7 +500,7 @@ BG96_GPS <- {
         // A valid upload date can't be more than 7 days (10080 mins) ago
         if (now.day < 7 && ds[2].tointeger() > now.day) {
             // Flip into the previous month
-            local ms = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            local ms = [31,28,31,30,31,30,31,31,30,31,30,31];
             local n = ms[ds[1].tointeger() - 1];
             if (ds[1].tointeger() == 2 && ((now.year % 4 == 0) && ((now.year % 100 > 0) || (now.year % 400 == 0)))) n += 1;
             dd = now.day - ds[2].tointeger() + n;
@@ -489,15 +516,12 @@ BG96_GPS <- {
     },
 
     // FROM 0.1.5
-    _deleteAssist = function(mode, cb) {
+    _deleteAssist = function(mode) {
         local t = _session.assist.reset(mode);
         if (t.status == 0) {
-            _log("[BG96_GPS] Assist data deleted");
-            if (cb != null) cb({});
+            _notify("Assist data deleted");
         } else {
-            local err = format("[BG96_GPS] Could not delete assist data (status %i)", t.status);
-            _log(err, true);
-            if (cb != null) cb({"error": "Could not delete assist data"});
+            _notify("Could not delete assist data", t.status);
         }
     }
 
