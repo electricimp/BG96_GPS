@@ -26,7 +26,7 @@ class GNSSTestCase5 extends ImpTestCase {
 
     function testDeleteAssistData() {
 
-        // TEST DELETE ASSIST DATA WITH MODE 1
+        // TEST DELETE ASSIST DATA WITH MODE 2
         return Promise(function(resolve, reject) {
             // Set the notification handler
             BG96_GPS.onNotify = function(data) {
@@ -38,7 +38,7 @@ class GNSSTestCase5 extends ImpTestCase {
             }.bindenv(this);
 
             // Delete assist data
-            BG96_GPS.deleteAssistData(BG96_RESET_MODE.HOT_START);
+            BG96_GPS.deleteAssistData(BG96_RESET_MODE.WARM_START);
 
         }.bindenv(this));
     }

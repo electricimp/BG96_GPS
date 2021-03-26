@@ -211,14 +211,18 @@ BG96_GPS <- {
                 local t = _session.assist.read();
                 if (t.status == 0) {
                     // There is assist data present, so proceed to enable
-                    // NOTE Actually enabling assist data here can cause _session.enable() call
+                    // NOTE Actually enabling assist data here can cause session.enable() call
                     //      below to fail with a 509. So we defer enabling assist until AFTER
                     //      that call. This should be the ONLY point at which 'assistEnableDelay'
                     //      becomes 'true'
-                    t = _session.assist.enable();
+                    try {
+                        t = _session.assist.enable();
                         if (t.status != 0) {
                             _notify("Could not enable assist", null, t.status);
                         }
+                    } catch(err) {
+                        throw "[BG96_GPS] Assist cannot be enabled without hardware RTC";
+                    }
                 } else {
                     _notify("Assist data not present or invalid", null, t.status);
                 }
