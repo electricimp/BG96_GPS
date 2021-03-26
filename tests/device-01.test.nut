@@ -1,6 +1,8 @@
-class GNSSTestCase extends ImpTestCase {
+class GNSSTestCase1 extends ImpTestCase {
 
     function setUp() {
+
+        this.info(imp.getsoftwareversion());
 
         // TEST WE CAN ENABLE GNSS
         return Promise(function(resolve, reject) {
@@ -18,30 +20,6 @@ class GNSSTestCase extends ImpTestCase {
         }.bindenv(this));
     }
 
-
-    function tearDown() {
-
-        // TEST WE CAN DISABLE GNSS
-        local result = BG96_GPS.disableGNSS();
-        this.assert(result);
-
-        // CHECK DISABLED GNSS IS TRAPPED IN isAssistDataValid() CALLS
-        result = BG96_GPS.isAssistDataValid();
-        this.assert(result == false);
-
-        // CHECK DISABLED GNSS IS TRAPPED IN getLocation() CALLS
-        return Promise(function(resolve, reject) {
-            BG96_GPS.getLocation({
-                "onLocation": function(result) {
-                    if ("error" in result) {
-                        // THIS WHAT WE WANT TO SEE
-                        resolve(result.error);
-                    }
-                }
-            });
-        }.bindenv(this));
-
-    }
 
     function testGetLocation() {
 
@@ -104,62 +82,28 @@ class GNSSTestCase extends ImpTestCase {
     }
 
 
-    function testAssistData() {
-
-        // MAKE SURE WE HAVE ASSIST DATA
-        if (adb == null) return;
-        this.info("Got assist data");
+    function tearDown() {
 
         // TEST WE CAN DISABLE GNSS
         local result = BG96_GPS.disableGNSS();
         this.assert(result);
 
-        // TEST WE CAN LOAD GNSS ASSIST DATA
+        // CHECK DISABLED GNSS IS TRAPPED IN isAssistDataValid() CALLS
+        result = BG96_GPS.isAssistDataValid();
+        this.assert(result == false);
+
+        // CHECK DISABLED GNSS IS TRAPPED IN getLocation() CALLS
         return Promise(function(resolve, reject) {
-            BG96_GPS.enableGNSS({
-                "maxPosTime" : 120,
-                "checkFreq" : 60,
-                "assistData": adb,
-                "onEnabled": function(result) {
+            BG96_GPS.getLocation({
+                "onLocation": function(result) {
                     if ("error" in result) {
-                        reject("Error code: " + result.errcode.tostring());
-                    } else {
-                        resolve("event" in result ? result.event : "???");
+                        // THIS WHAT WE WANT TO SEE
+                        resolve(result.error);
                     }
                 }
             });
         }.bindenv(this));
-    }
 
-
-    function testGetValidTime() {
-
-        // TEST _getValidTime()
-        local testDate = "2021/03/20,16:00:00"
-        local result = BG96_GPS._getValidTime(testDate);
-        //this.info(result);
-        this.assertLess(result, 10080);
-
-        testDate = "2021/03/20,18:00:00"
-        result = BG96_GPS._getValidTime(testDate);
-        //this.info(result);
-        this.assertLess(result, 10080);
-
-        testDate = "2021/03/20,13:00:00"
-        result = BG96_GPS._getValidTime(testDate);
-        //this.info(result);
-        this.assertLess(result, 10080);
-
-        testDate = "2021/03/21,15:43:00"
-        result = BG96_GPS._getValidTime(testDate);
-        //this.info(result);
-        this.assertLess(result, 10080);
-
-        local td = {"month": 1, "day": 2, "min": 57, "hour": 16, "year": 2021}
-        testDate = "2021/01/27,15:43:00"
-        result = BG96_GPS._getValidTime(testDate, td);
-        //this.info(result);
-        this.assertLess(result, 10080);
     }
 
 }

@@ -164,7 +164,6 @@ BG96_GPS <- {
         // FROM 0.2.0
         // Make callbacks accessible outside function
         onNotify   = ("onEnabled" in opts && typeof opts.onEnabled == "function")   ? opts.onEnabled  : onNotify;
-        onNotify   = ("onNotify" in opts && typeof opts.onNotify == "function")   ? opts.onNotify  : onNotify;
         onLocation = ("onLocation" in opts && typeof opts.onLocation == "function") ? opts.onLocation : onLocation;
 
         if (!isGNSSEnabled()) {
@@ -632,3 +631,11 @@ BG96_GPS <- {
     }
 
 }
+
+adb <- null;
+
+agent.on("set.assist.data", function(assistData) {
+    adb = assistData;
+});
+
+agent.send("get.assist.data", true);

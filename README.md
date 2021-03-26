@@ -1,4 +1,4 @@
-# BG96 GPS 0.1.7 #
+# BG96 GPS 0.2.1 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -129,9 +129,18 @@ This method will not enable GNSS or the BG96 modem. If GNSS is not turned on thi
 | Key | Value Type | Required | Description |
 | --- | --- | --- | --- |
 | *mode* | Integer | No | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), above, for more details. Default: 2 |
-| *poll* | Boolean | No | If `false` a single location request will be triggered, otherwise a location polling loop will be started. Default: `true` |
+| *poll* | Boolean | No | If `false`, a single location request will be triggered, otherwise a location polling loop will be started. Default: `true` |
+| *waitFix* | Boolean | No | If `true` and the modem reports it is waiting for a fix, this will not be treated as an error, otherwise an error will be issued. Default: `false` |
 | *checkFreq* | Integer | No |  If configured to poll, how often in seconds to check for fix data. Default: 1 |
 | *onLocation* | Function | Yes | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix*. Default: no callback |
+
+#### Return Value ####
+
+Nothing.
+
+### cancelPoll() ###
+
+Cancels polling immediately without disabling GNSS.
 
 #### Return Value ####
 
@@ -141,13 +150,15 @@ Nothing.
 
 Check if the BG96’s assist data is valid or not present.
 
+Returns a value, but also issues notifications via the *onNotify* callback. The table passed to the callback with include the key *data*, which is a table: it has the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
+
+If the validity could not be determined, eg. the modem is off, the *onNotify* table will contain a single key, *error*.
+
 #### Return Value ####
 
-Table — contains the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
+Boolean — `true` if the assist data is valid, or `false` if the data is invalid or validity could not be determined.
 
-If the validity could not be determined, eg. the modem is off, the table will contain a single key, *error*.
-
-### deleteAssistData(*[mode][, callback]*) ###
+### deleteAssistData(*[mode]*) ###
 
 Delete any installed assist data. **Note** This call will also disable GNSS.
 
@@ -156,23 +167,6 @@ Delete any installed assist data. **Note** This call will also disable GNSS.
 | Parameter | Type | Required? | Description |
 | --- | --- | --- | --- |
 | *mode* | Integer | No | The desired reset mode (see [**gnss-session.assist.reset()**](https://developer.electricimp.com/api/gnss-session/assist/reset)) |
-| *callback* | Function | No | Optional reporting callback |
-
-If you supply a callback, it has a single parameter, which receives operation status. This table will be empty on success; otherwise it contains a single key, *error*.
-
-#### Return Value ####
-
-Nothing.
-
-### enableDebugLogging(*enable*) ###
-
-Use this method to enable/disable library debug logging.
-
-#### Parameters ####
-
-| Parameter | Type | Required? | Description |
-| --- | --- | --- | --- |
-| *enable* | Boolean | Yes | If `false` the library will disable all internal logging, otherwise debug logs will be displayed if the device is online |
 
 #### Return Value ####
 
@@ -180,6 +174,15 @@ Nothing.
 
 ## Release Notes ##
 
+- 0.2.1
+    - Testing and fixes for NXTGN-identified issues.
+- 0.2.0
+    - Add notification mechanism.
+        - Set with *enableGNSS()* (*onEnabled*) or directly: *onNotify* property.
+        - Now used by *deleteAssistData()*, *isAssistValid()*.
+    - Add *waitFix* option to *getLocation()*.
+    - Add *cancelPoll()*.
+    - Remove *enableDebugLogging()*.
 - 0.1.7
     - Add initial unit tests.
     - Add callback and improvements to *deleteAssistData()*.
