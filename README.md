@@ -175,7 +175,8 @@ Nothing.
 ## Release Notes ##
 
 - 1.0.0
-    - Release candidate.
+    - Release version.
+- 0.2.1
     - Testing and fixes for NXTGN-identified issues.
 - 0.2.0
     - Add notification mechanism.
