@@ -1,0 +1,14 @@
+{
+  "deviceGroupId": "f3ef6490-0ffc-cb1a-4ede-03718f9aaf86",
+  "deviceGroupName" : "impFarm F",
+  "timeout": 450,
+  "stopOnFail": false,
+  "allowDisconnect": false,
+  "builderCache": false,
+  "testFiles": [
+    "*.test.nut",
+    "tests/**/*.test.nut"
+  ],
+  "deviceFile": "bg96_gps.device.nut",
+  "agentFile": "bg96_gps.agent.nut"
+}
