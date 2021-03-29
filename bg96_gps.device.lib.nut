@@ -67,6 +67,14 @@ enum BG96_AT_ERROR_CODE {
     GPS_UNKNOWN_ERROR               = "549"
 }
 
+enum BG96_IMPOS_ERROR_CODE {
+    TIMEOUT                         = -1,
+    MODEM_NOT_READY                 = -2,
+    CMD_IN_FLIGHT                   = -3,
+    GPS_INVALID_PARAM               = -4,
+    TX_FAILURE                      = -5
+}
+
 enum BG96_GNSS_ON_DEFAULT {
     MODE                = 1,    // Stand Alone is the only mode supported (1)
     MAX_POS_TIME_SEC    = 30,   // Sec max pos time (30)
@@ -98,7 +106,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "1.0.0",
+    VERSION   = "0.2.1",
 
     /*
      * PUBLIC PROPERTIES
@@ -203,7 +211,6 @@ BG96_GPS <- {
                 return;
             }
 
-            local assistEnableDelay = false;
             if (useAssist) {
                 // FROM 0.1.5 -- check we have assist data before proceeding
                 // This will be the case if 'enableGNSS()' called with 'useAssist' set true,
@@ -211,10 +218,9 @@ BG96_GPS <- {
                 local t = _session.assist.read();
                 if (t.status == 0) {
                     // There is assist data present, so proceed to enable
-                    // NOTE Actually enabling assist data here can cause session.enable() call
-                    //      below to fail with a 509. So we defer enabling assist until AFTER
-                    //      that call. This should be the ONLY point at which 'assistEnableDelay'
-                    //      becomes 'true'
+                    // NOTE Enabling assist data on a device that previously lacked assist data
+                    //      can cause session.enable() call below to fail with a 509 (GPS_XTRA_NOT_ENABLED).
+                    //      So we check for this in the session.enable() call below
                     try {
                         t = _session.assist.enable();
                         if (t.status != 0) {
@@ -232,15 +238,15 @@ BG96_GPS <- {
             if (resp.status != 0) {
                 // Error enabling GNSS
                 local status = resp.status.tostring();
-                if (status != BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING) {
-                    _notify("Error enabling GNSS", null, resp.status);
+                if (status == BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING || status == BG96_AT_ERROR_CODE.GPS_XTRA_NOT_ENABLED) {
+                    // Retry after 'retryTime'
+                    imp.wakeup(retryTime, function() {
+                        enableGNSS(opts);
+                    }.bindenv(this));
                     return;
                 }
 
-                // Retry after 'retryTime'
-                imp.wakeup(retryTime, function() {
-                    enableGNSS(opts);
-                }.bindenv(this));
+                _notify("Error enabling GNSS", null, resp.status);
                 return;
             }
         }

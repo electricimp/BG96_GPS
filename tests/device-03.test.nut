@@ -2,9 +2,9 @@ class GNSSTestCase3 extends ImpTestCase {
 
     function setUp() {
 
-        this.info("ASSIST DATA DELETE (MODE 3) TESTS");
+        this.info("GET LOCATION WITH ASSIST TESTS");
 
-        // Enable GNSS
+        // TEST WE CAN ENABLE GNSS
         return Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({
                 "maxPosTime" : 120,
@@ -21,51 +21,58 @@ class GNSSTestCase3 extends ImpTestCase {
     }
 
 
-    function testDeleteAssistData() {
+    function testGetLocation() {
 
-        // TEST DELETE ASSIST DATA WITH MODE 3 (DEFAULT)
+        // TEST WE CAN GET A SINGLE GNSS LOCATION
         return Promise(function(resolve, reject) {
-            // Set the notification handler
-            BG96_GPS.onNotify = function(data) {
-                if ("event" in data && data.event == "Assist data deleted") {
-                    resolve(data.event);
-                } else {
-                    reject("error" in data ? (data.error + ", code: " + data.errcode) : "delete assist error" );
-                }
-            }.bindenv(this);
+            BG96_GPS.getLocation({
+                "onLocation": function(result) {
+                    if ("error" in result) {
+                        if (result.error == "GPS fix not available") {
+                            resolve(result.error);
+                        } else {
+                            reject(result.error);
+                        }
+                    } else if ("fix" in result) {
+                        resolve(result.fix);
+                    }
+                },
+                "mode": BG96_GNSS_LOCATION_MODE.TWO
+            });
+        }.bindenv(this));
+    }
 
-            // Delete assist data
-            BG96_GPS.deleteAssistData();
 
+    function testGetLocationWaitForFix() {
+
+        // TEST WE CAN GET A GNSS LOCATION AND WAIT FOR A FIX
+        // IN THIS CASE ('ops.waitFix = true') NO GPS FIX IS NOT AN ERROR
+        return Promise(function(resolve, reject) {
+            BG96_GPS.getLocation({
+                "onLocation": function(result) {
+                    if ("error" in result) {
+                        // GPS FIX MAY BE CALLED REPEATEDLY -- NOT REALLY A LIB FAIL
+                        reject(result.error);
+                    } else if ("fix" in result) {
+                        resolve(result.fix);
+                    }
+                },
+                "waitFix": true,
+                "mode": BG96_GNSS_LOCATION_MODE.TWO
+            });
         }.bindenv(this));
     }
 
 
     function tearDown() {
 
-        // CONFIRM DATA IS INVALID
-        return Promise(function(resolve, reject) {
-            // Set the notification handler
-            BG96_GPS.onNotify = function(resp) {
-                local result = BG96_GPS.disableGNSS();
-                if ("error" in resp) {
-                    reject(resp.error + ", code: " + resp.errcode);
-                } else if ("data" in resp) {
-                    if (resp.data.valid) {
-                        reject(resp.event);
-                    } else {
-                        resolve(resp.event);
-                    }
-                } else {
-                    reject("Bad notification");
-                }
-            }.bindenv(this);
+        // CHECK DISABLED GNSS IS TRAPPED IN isAssistDataValid() CALLS
+        local result = BG96_GPS.isAssistDataValid();
+        this.assert(result == true);
 
-            // Delete assist data
-            local result = BG96_GPS.isAssistDataValid();
-
-        }.bindenv(this));
-
+        // TEST WE CAN DISABLE GNSS
+        result = BG96_GPS.disableGNSS();
+        this.assert(result);
     }
 
 }

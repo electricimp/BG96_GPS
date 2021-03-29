@@ -1,19 +1,24 @@
-class GNSSTestCase4 extends ImpTestCase {
+class GNSSTestCase8 extends ImpTestCase {
 
     function setUp() {
 
-        this.info("ASSIST DATA DELETE (MODE 3) TESTS");
+        this.info("ASSIST DATA DELETE (MODE 0) TESTS");
 
-        // Enable GNSS
+        // MAKE SURE WE HAVE ASSIST DATA
+        if (adb == null) return;
+        local result = BG96_GPS.disableGNSS();
+
+        // TEST WE CAN LOAD GNSS ASSIST DATA
         return Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({
                 "maxPosTime" : 120,
                 "checkFreq" : 60,
+                "assistData": adb,
                 "onEnabled": function(result) {
                     if ("error" in result) {
-                        reject("Error code: " + result.errcode.tostring());
+                        reject(result.error + ", code: " + result.errcode.tostring());
                     } else {
-                        resolve(result.event);
+                        resolve("event" in result ? result.event : "???");
                     }
                 }
             });
@@ -23,19 +28,19 @@ class GNSSTestCase4 extends ImpTestCase {
 
     function testDeleteAssistData() {
 
-        // TEST DELETE ASSIST DATA WITH MODE 3 (DEFAULT)
+        // TEST DELETE ASSIST DATA WITH MODE 0
         return Promise(function(resolve, reject) {
             // Set the notification handler
             BG96_GPS.onNotify = function(data) {
                 if ("event" in data && data.event == "Assist data deleted") {
-                    resolve(data.event);
+                    resolve("Assist data deleted");
                 } else {
                     reject("error" in data ? (data.error + ", code: " + data.errcode) : "delete assist error" );
                 }
             }.bindenv(this);
 
             // Delete assist data
-            BG96_GPS.deleteAssistData();
+            BG96_GPS.deleteAssistData(BG96_RESET_MODE.COLD_START);
 
         }.bindenv(this));
     }
@@ -43,7 +48,6 @@ class GNSSTestCase4 extends ImpTestCase {
 
     function tearDown() {
 
-        // CONFIRM DATA IS INVALID
         return Promise(function(resolve, reject) {
             // Set the notification handler
             BG96_GPS.onNotify = function(resp) {

@@ -21,28 +21,6 @@ class GNSSTestCase extends ImpTestCase {
     }
 
 
-    function testGetLocation() {
-
-        // TEST WE CAN GET A SINGLE GNSS LOCATION
-        return Promise(function(resolve, reject) {
-            BG96_GPS.getLocation({
-                "mode": BG96_GNSS_LOCATION_MODE.TWO,
-                "onLocation": function(result) {
-                    if ("error" in result) {
-                        if (result.error == "GPS fix not available") {
-                            resolve(result.error);
-                        } else {
-                            reject(result.error);
-                        }
-                    } else if ("fix" in result) {
-                        resolve(result.fix);
-                    }
-                }
-            });
-        }.bindenv(this));
-    }
-
-
     function testAssistData() {
 
         // MAKE SURE WE HAVE ASSIST DATA
