@@ -1,4 +1,4 @@
-# BG96 GPS 0.2.1 #
+# BG96 GPS 1.0.0 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
@@ -174,7 +174,8 @@ Nothing.
 
 ## Release Notes ##
 
-- 0.2.1
+- 1.0.0
+    - Release candidate.
     - Testing and fixes for NXTGN-identified issues.
 - 0.2.0
     - Add notification mechanism.

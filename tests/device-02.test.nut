@@ -2,6 +2,8 @@ class GNSSTestCase extends ImpTestCase {
 
     function setUp() {
 
+        this.info("ASSIST DATA LOAD TESTS");
+
         // Enable GNSS
         return Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({
@@ -12,6 +14,28 @@ class GNSSTestCase extends ImpTestCase {
                         reject("Error code: " + result.errcode.tostring());
                     } else {
                         resolve(result.event);
+                    }
+                }
+            });
+        }.bindenv(this));
+    }
+
+
+    function testGetLocation() {
+
+        // TEST WE CAN GET A SINGLE GNSS LOCATION
+        return Promise(function(resolve, reject) {
+            BG96_GPS.getLocation({
+                "mode": BG96_GNSS_LOCATION_MODE.TWO,
+                "onLocation": function(result) {
+                    if ("error" in result) {
+                        if (result.error == "GPS fix not available") {
+                            resolve(result.error);
+                        } else {
+                            reject(result.error);
+                        }
+                    } else if ("fix" in result) {
+                        resolve(result.fix);
                     }
                 }
             });

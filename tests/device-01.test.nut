@@ -3,6 +3,7 @@ class GNSSTestCase1 extends ImpTestCase {
     function setUp() {
 
         this.info(imp.getsoftwareversion());
+        this.info("BASIC SETUP TESTS");
 
         // TEST WE CAN ENABLE GNSS
         return Promise(function(resolve, reject) {
@@ -36,7 +37,8 @@ class GNSSTestCase1 extends ImpTestCase {
                     } else if ("fix" in result) {
                         resolve(result.fix);
                     }
-                }
+                },
+                "mode": BG96_GNSS_LOCATION_MODE.TWO
             });
         }.bindenv(this));
     }
@@ -56,7 +58,8 @@ class GNSSTestCase1 extends ImpTestCase {
                         resolve(result.fix);
                     }
                 },
-                "waitFix": true
+                "waitFix": true,
+
             });
         }.bindenv(this));
     }

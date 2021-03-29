@@ -2,6 +2,8 @@ class GNSSTestCase6 extends ImpTestCase {
 
     function setUp() {
 
+        this.info("ASSIST DATA DELETE (MODE 1) TESTS");
+
         // MAKE SURE WE HAVE ASSIST DATA
         if (adb == null) return;
         local result = BG96_GPS.disableGNSS();

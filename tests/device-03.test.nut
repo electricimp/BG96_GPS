@@ -2,6 +2,8 @@ class GNSSTestCase3 extends ImpTestCase {
 
     function setUp() {
 
+        this.info("ASSIST DATA DELETE (MODE 3) TESTS");
+
         // Enable GNSS
         return Promise(function(resolve, reject) {
             BG96_GPS.enableGNSS({

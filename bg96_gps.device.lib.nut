@@ -98,7 +98,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.2.1",
+    VERSION   = "1.0.0",
 
     /*
      * PUBLIC PROPERTIES
@@ -564,7 +564,7 @@ BG96_GPS <- {
         try {
             assert(_impOSVersion >= _minSuppportedImpOS);
         } catch (exp) {
-            throw "BG96_GPS 0.1.x requires impOS 43 or above";
+            throw "BG96_GPS 0.2.x requires impOS 43 or above";
         }
     },
 
