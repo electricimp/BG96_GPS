@@ -10,7 +10,7 @@ bg96_gps.device.lib.nut
 
 **and paste it at the top of your device code**
 
-![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:_Bg96gps_BuildAndTest/statusIcon)
+![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:_Bg96gps_BuildAndTest)/statusIcon)
 
 ## BG96 GPS Usage ##
 
