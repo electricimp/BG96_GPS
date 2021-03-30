@@ -9,6 +9,6 @@
     "*.test.nut",
     "tests/**/*.test.nut"
   ],
-  "deviceFile": "bg96_gps.device.nut",
-  "agentFile": "bg96_gps.agent.nut"
+  "deviceFile": "./tests/bg96_gps.device.nut",
+  "agentFile": "./tests/bg96_gps.agent.nut"
 }
