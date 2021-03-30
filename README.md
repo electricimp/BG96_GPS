@@ -4,7 +4,7 @@ This library provides your application with access to GPS location data retrieve
 
 **To include this library to your project, copy the content of the file**
 
-```
+```squirrel
 bg96_gps.device.lib.nut
 ```
 
@@ -175,41 +175,7 @@ Nothing.
 ## Release Notes ##
 
 - 1.0.0
-    - Release version.
-- 0.2.1
-    - Testing and fixes for NXTGN-identified issues.
-- 0.2.0
-    - Add notification mechanism.
-        - Set with *enableGNSS()* (*onEnabled*) or directly: *onNotify* property.
-        - Now used by *deleteAssistData()*, *isAssistValid()*.
-    - Add *waitFix* option to *getLocation()*.
-    - Add *cancelPoll()*.
-    - Remove *enableDebugLogging()*.
-- 0.1.7
-    - Add initial unit tests.
-    - Add callback and improvements to *deleteAssistData()*.
-    - Add improvements to *isAssistDataValid()*.
-- 0.1.6
-    - Bug fixes for calculation of assist data validity period.
-- 0.1.5
-    - Catch attempts to use assist data without data having been uploaded.
-    - Mitigate BG96 issue where the assist data duration returned by modem is always 0 or 10080.
-    - Rework *deleteAssistData()* to support deletion when a GNSS session has not yet been established.
-- 0.1.4
-    - Add *deleteAssistData()*.
-    - Fix variable name: `stratus` -> `status`
-    - Correctly cancel location polling timer when GNSS disabled.
-    - Remove return table keys removed from imp API.
-- 0.1.3
-    - Return table from *isAssistDataValid()*, not boolean.
-- 0.1.2
-    - Add *isAssistDataValid()* function.
-    - Prettify log messages.
-    - Fix an issue preventing loaded assist data being enabled.
-- 0.1.1
-    - Make *debug* a public property.
-- 0.1.0
-    - Initial release supporting impOS 43 GNSS API.
+    - Initial public release.
 
 ## License ##
 
