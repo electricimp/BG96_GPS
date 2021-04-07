@@ -69,7 +69,7 @@ class GNSSTestCase1 extends ImpTestCase {
 
         // TEST THAT getLocation() CORRECTLY TRAPS NO CALLBACK
         return Promise(function(resolve, reject) {
-            BG96_GPS.onNotify = function(data) {
+            BG96_GPS.onEvent = function(data) {
                 if ("error" in data && data.error == "No location report callback") {
                     // Correctly trapped
                     resolve();

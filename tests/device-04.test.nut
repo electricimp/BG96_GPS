@@ -26,7 +26,7 @@ class GNSSTestCase4 extends ImpTestCase {
         // TEST DELETE ASSIST DATA WITH MODE 3 (DEFAULT)
         return Promise(function(resolve, reject) {
             // Set the notification handler
-            BG96_GPS.onNotify = function(data) {
+            BG96_GPS.onEvent = function(data) {
                 if ("event" in data && data.event == "Assist data deleted") {
                     resolve(data.event);
                 } else {
@@ -46,7 +46,7 @@ class GNSSTestCase4 extends ImpTestCase {
         // CONFIRM DATA IS INVALID
         return Promise(function(resolve, reject) {
             // Set the notification handler
-            BG96_GPS.onNotify = function(resp) {
+            BG96_GPS.onEvent = function(resp) {
                 local result = BG96_GPS.disableGNSS();
                 if ("error" in resp) {
                     reject(resp.error + ", code: " + resp.errcode);

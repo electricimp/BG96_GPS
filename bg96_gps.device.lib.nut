@@ -106,12 +106,12 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "0.2.1",
+    VERSION   = "1.0.0",
 
     /*
      * PUBLIC PROPERTIES
      */
-    onNotify = null,
+    onEvent = null,
     onLocation = null,
     debug = true,
 
@@ -152,9 +152,9 @@ BG96_GPS <- {
      *
      * @param {table} opts - Configuration options. All are optional; defaults will be used in their place.
      *                       Key options include:
-     *                       * onNotify - callback for library and GNSS event notifications, including errors.
+     *                       * onEvent   - callback for library and GNSS event notifications, including errors.
      *                       * onLocation - callback for location data, including location-specific errors.
-     *                       NOTE Responds via the onEnabled/onNotify callback.
+     *                       NOTE Responds via the onEvent callback.
      *
     */
     enableGNSS = function(opts = {}) {
@@ -167,12 +167,13 @@ BG96_GPS <- {
         local retryTime  = ("retryTime" in opts)  ? opts.retryTime  : BG96_GNSS_ON_DEFAULT.RETRY_TIME_SEC;
         local locMode    = ("locMode" in opts)    ? opts.locMode    : BG96_GNSS_LOCATION_MODE.TWO;
         local assistData = ("assistData" in opts) ? opts.assistData : null;
-        local useAssist  = ("useAssist" in opts) ? opts.useAssist : false;
+        local useAssist  = ("useAssist" in opts)  ? opts.useAssist  : false;
 
         // FROM 0.2.0
         // Make callbacks accessible outside function
-        onNotify   = ("onEnabled" in opts && typeof opts.onEnabled == "function")   ? opts.onEnabled  : onNotify;
-        onNotify   = ("onNotify" in opts && typeof opts.onNotify == "function")   ? opts.onNotify  : onNotify;
+        onEvent    = ("onEnabled" in opts && typeof opts.onEnabled == "function")   ? opts.onEnabled  : onEvent;
+        onEvent    = ("onNotify" in opts && typeof opts.onNotify == "function")     ? opts.onNotify   : onEvent;
+        onEvent    = ("onEvent" in opts && typeof opts.onEvent == "function")       ? opts.onEvent    : onEvent;
         onLocation = ("onLocation" in opts && typeof opts.onLocation == "function") ? opts.onLocation : onLocation;
 
         if (!isGNSSEnabled()) {
@@ -310,7 +311,7 @@ BG96_GPS <- {
      *                       * poll       {bool}     - Pass in true to trigger regular location sensing. Default: false.
      *                       * mode       {integer}  - The location data string format. See the enum section above.
      *
-     *                       This function responds via the onEnabled/onNotify callback.
+     *                       This function responds via the nEvent callback.
      *
     */
     getLocation = function(opts = {}) {
@@ -353,7 +354,7 @@ BG96_GPS <- {
      *
      * @returns {bool} Whether the assist data is valid (true), invalid (false),
      *                 absent (false), or validity could not be determined (false).
-     *                 NOTE Function also responds via the onEnabled/onNotify callback.
+     *                 NOTE Function also responds via the onEvent callback.
      *
     */
     isAssistDataValid = function() {
@@ -380,7 +381,7 @@ BG96_GPS <- {
      *
      * @param {integer} mode - BG96 deletion mode. For possible values and their effects,
      *                         see the enum BG96_RESET_MODE, above.
-     *                         Responds via the onEnabled/onNotify callback.
+     *                         Responds via the onEvent callback.
      *
     */
     deleteAssistData = function(mode = BG96_RESET_MODE.DELETE_DATA) {
@@ -547,7 +548,7 @@ BG96_GPS <- {
 
     // General notification poster
     _notify = function(msg, data = null, code = 999) {
-        if (onNotify != null) {
+        if (onEvent != null) {
             local info = {};
             if (data != null) info.data <- data;
             if (code == 999) {
@@ -556,7 +557,7 @@ BG96_GPS <- {
                 info.error <- msg;
                 info.errcode <- code;
             }
-            onNotify(info);
+            onEvent(info);
         }
     },
 

@@ -64,7 +64,7 @@ Boolean &mdash; whether GNSS is enabled (`true`) or disabled (`false`).
 
 ### enableGNSS(*[options]*) ###
 
-This method turns on GNSS with the specified options. This method will run asynchronously; please use the *onEnabled* and/or *onLocation* callbacks to handle errors and schedule next tasks.
+This method turns on GNSS with the specified options. This method will run asynchronously; please use the *onEvent* and/or *onLocation* callbacks to handle errors and schedule next tasks.
 
 The BG96 modem must be powered on to enable GNSS.
 
@@ -85,7 +85,7 @@ The BG96 modem must be powered on to enable GNSS.
 | *checkFreq* | Integer | How often in seconds fix data is returned. Range: 1 - 65535. Default: 1 |
 | *retryTime* | Integer or Float | How long to wait between retries when powering up the modem. Default: 1 |
 | *locMode* | Integer | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), below, for more details. Default: 2 |
-| *onEnabled* | Function | Callback to be triggered when GNSS has been enabled. This function has one parameter which will contain an error message or be `null` if no error was encountered. Default: no callback |
+| *onEvent* | Function | Callback to be triggered when GNSS has been enabled or some other event occurs. This function has one parameter, a table, that may contain the keys *error* or *event*. Default: no callback |
 | *onLocation* | Function | Callback to be triggered when GNSS location data is ready. This function has one parameter: a table that may contain the keys *error* or *fix*. Default: no callback |
 | *useAssist* | Boolean | Enable assist without loading new assist data. New in library version 0.1.0. Default: `false` |
 | *assistData* | Blob | GPS fix assist data. New in library version 0.1.0. Default: no data |
@@ -132,7 +132,7 @@ This method will not enable GNSS or the BG96 modem. If GNSS is not turned on thi
 | *poll* | Boolean | No | If `false`, a single location request will be triggered, otherwise a location polling loop will be started. Default: `true` |
 | *waitFix* | Boolean | No | If `true` and the modem reports it is waiting for a fix, this will not be treated as an error, otherwise an error will be issued. Default: `false` |
 | *checkFreq* | Integer | No |  If configured to poll, how often in seconds to check for fix data. Default: 1 |
-| *onLocation* | Function | Yes | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix*. Default: no callback |
+| *onLocation* | Function | Yes | Callback to be triggered when GNSS location data is ready. This function has one parameter, a table, that may contain the keys *error* or *fix* |
 
 #### Return Value ####
 
@@ -150,9 +150,9 @@ Nothing.
 
 Check if the BG96’s assist data is valid or not present.
 
-Returns a value, but also issues notifications via the *onNotify* callback. The table passed to the callback with include the key *data*, which is a table: it has the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, the key *time* will be present to provide the remaining validity period in minutes.
+This method returns a value, but also issues notifications via the *onEvent* callback (see [**EnableGNSS() Options**](#enable-options)). The table passed to the callback will include the key *data*, which is a table: it has the key *valid*, which will be `true` if the data is valid, otherwise `false`. If *valid* is true, *data* will also contain the key *time* to provide the remaining validity period in minutes.
 
-If the validity could not be determined, eg. the modem is off, the *onNotify* table will contain a single key, *error*.
+If the validity could not be determined, eg. the modem is off, the *onEvent* table will contain a single key, *error*.
 
 #### Return Value ####
 
