@@ -68,6 +68,17 @@ This method turns on GNSS with the specified options. This method will run async
 
 The BG96 modem must be powered on to enable GNSS.
 
+#### Assist Data ####
+
+If you wish to load GNSS assist data — which we strongly recommend — pass this to the library as the value of the *options* key *assistData*. Provide the binary data as a blob. The BG96 uses Quectel’s gpsOneXTRA assist data format. The latest file is available from Quectel at either of the following URLs:
+
+* [https://xtrapath4.izatcloud.net/xtra2.bin](https://xtrapath4.izatcloud.net/xtra2.bin)
+* [https://xtrapath4.izatcloud.net/xtra3grc.bin](https://xtrapath4.izatcloud.net/xtra3grc.bin)
+
+The `xtra2.bin` data supports GPS and Glonass; the `xtra3grc.bin` data supports GPS, Glonass and BeiDou. Choose the data package that best meets your needs. Both are well under 50KB, so can be easily acquired by your agent and passed to the device for use in your *enableGNSS()* call. See [the Dev Center for sample code](https://developer.electricimp.com/reference/gnss-on-imp006#load-gnss-location-assist-data).
+
+You can check the validity of assist data you have already loaded using [*isAssistDataValid()*](#isassistdatavalid).
+
 #### Parameters ####
 
 | Parameter | Type | Required? | Description |
@@ -87,8 +98,8 @@ The BG96 modem must be powered on to enable GNSS.
 | *locMode* | Integer | Latitude and longitude display formats. See [**Location Mode Values**](#location-mode-values), below, for more details. Default: 2 |
 | *onEvent* | Function | Callback to be triggered when GNSS has been enabled or some other event occurs. This function has one parameter, a table, that may contain the keys *error* or *event*. Default: no callback |
 | *onLocation* | Function | Callback to be triggered when GNSS location data is ready. This function has one parameter: a table that may contain the keys *error* or *fix*. Default: no callback |
-| *useAssist* | Boolean | Enable assist without loading new assist data. New in library version 0.1.0. Default: `false` |
-| *assistData* | Blob | GPS fix assist data. New in library version 0.1.0. Default: no data |
+| *useAssist* | Boolean | Enable assist without loading new assist data. Default: `false` |
+| *assistData* | Blob | GPS fix assist data. Default: no data |
 
 #### Location Mode Values ####
 
