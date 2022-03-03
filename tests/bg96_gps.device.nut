@@ -1,6 +1,6 @@
 /*
  * BG96_GPS library
- * Copyright 2021 Twilio
+ * Copyright 2022 Twilio
  *
  * MIT License
  * SPDX-License-Identifier: MIT
@@ -76,12 +76,12 @@ enum BG96_IMPOS_ERROR_CODE {
 }
 
 enum BG96_GNSS_ON_DEFAULT {
-    MODE                = 1,    // Stand Alone is the only mode supported (1)
-    MAX_POS_TIME_SEC    = 30,   // Sec max pos time (30)
-    FIX_ACCURACY_METERS = 50,   // Fix accuracy in meters (50)
-    NUM_FIX_CHECKS      = 0,    // Num of checks after fix before powering down GPS (0 - continuous)
-    GET_LOC_FREQ_SEC    = 1,    // Check every x sec (1)
-    RETRY_TIME_SEC      = 1,    // Time to wait for modem to power up
+    MODE                            = 1,    // Stand Alone is the only mode supported (1)
+    MAX_POS_TIME_SEC                = 30,   // Sec max pos time (30)
+    FIX_ACCURACY_METERS             = 50,   // Fix accuracy in meters (50)
+    NUM_FIX_CHECKS                  = 0,    // Num of checks after fix before powering down GPS (0 - continuous)
+    GET_LOC_FREQ_SEC                = 1,    // Check every x sec (1)
+    RETRY_TIME_SEC                  = 1     // Time to wait for modem to power up
 }
 
 enum BG96_GNSS_LOCATION_MODE {
@@ -91,14 +91,19 @@ enum BG96_GNSS_LOCATION_MODE {
 }
 
 enum BG96_RESET_MODE {
-    COLD_START          = 0, //	Delete all assistance data except gpsOneXTRA data. Enforce a cold start after starting GNSS
-    HOT_START           = 1, // Do not delete any data. Perform hot start if the conditions are permitted after starting GNSS
-    WARM_START          = 2, // Delete some related data. Perform warm start if the conditions are permitted after starting GNSS
-    DELETE_DATA         = 3  // Delete the gpsOneXTRA assistance data injected into GNSS engine
+    //	Delete all assistance data except gpsOneXTRA data. Enforce a cold start after starting GNSS
+    COLD_START                      = 0,
+    // Do not delete any data. Perform hot start if the conditions are permitted after starting GNSS
+    HOT_START                       = 1,
+    // Delete some related data. Perform warm start if the conditions are permitted after starting GNSS
+    WARM_START                      = 2,
+    // Delete the gpsOneXTRA assistance data injected into GNSS engine
+    DELETE_DATA                     = 3
 }
 
 // Stale location data is often returned immediately after power up
 const BG96_GPS_EN_POLLING_TIMEOUT = 3;
+
 
 /*
  * Library -- set as a GLOBAL table so its properties and functions
@@ -106,7 +111,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "1.0.0",
+    VERSION   = "1.0.1",
 
     /*
      * PUBLIC PROPERTIES
@@ -311,8 +316,7 @@ BG96_GPS <- {
      *                       * poll       {bool}     - Pass in true to trigger regular location sensing. Default: false.
      *                       * mode       {integer}  - The location data string format. See the enum section above.
      *
-     *                       This function responds via the nEvent callback.
-     *
+     *                       This function responds via the onEvent callback.
     */
     getLocation = function(opts = {}) {
         _checkOS();
@@ -355,7 +359,6 @@ BG96_GPS <- {
      * @returns {bool} Whether the assist data is valid (true), invalid (false),
      *                 absent (false), or validity could not be determined (false).
      *                 NOTE Function also responds via the onEvent callback.
-     *
     */
     isAssistDataValid = function() {
         _checkOS();
@@ -382,7 +385,6 @@ BG96_GPS <- {
      * @param {integer} mode - BG96 deletion mode. For possible values and their effects,
      *                         see the enum BG96_RESET_MODE, above.
      *                         Responds via the onEvent callback.
-     *
     */
     deleteAssistData = function(mode = BG96_RESET_MODE.DELETE_DATA) {
         _checkOS();
@@ -563,15 +565,8 @@ BG96_GPS <- {
 
     // Check we're running on a correct system
     _checkOS = function() {
-        if (_impOSVersion == null) {
-            local n = split(imp.getsoftwareversion(), "-");
-            _impOSVersion = n[2].tofloat();
-        }
-
-        try {
-            assert(_impOSVersion >= _minSuppportedImpOS);
-        } catch (exp) {
-            throw "BG96_GPS 0.2.x requires impOS 43 or above";
+        if (!("gnss" in hardware)) {
+            throw "The BG96_GPS library requires impOS 43 or above";
         }
     },
 
@@ -643,11 +638,3 @@ BG96_GPS <- {
     }
 
 }
-
-adb <- null;
-
-agent.on("set.assist.data", function(assistData) {
-    adb = assistData;
-});
-
-agent.send("get.assist.data", true);
