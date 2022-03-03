@@ -187,9 +187,10 @@ Nothing.
 
 * 1.0.1
     * Implement BG96 GNSS default states, reset modes as constants.
+    * Better GNSS availability testing.
 * 1.0.0
     * Initial public release.
 
 ## License ##
 
-The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2021 Twilio.
+The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2022 Twilio.
