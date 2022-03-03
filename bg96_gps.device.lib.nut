@@ -565,15 +565,8 @@ BG96_GPS <- {
 
     // Check we're running on a correct system
     _checkOS = function() {
-        if (_impOSVersion == null) {
-            local n = split(imp.getsoftwareversion(), "-");
-            _impOSVersion = n[2].tofloat();
-        }
-
-        try {
-            assert(_impOSVersion >= _minSuppportedImpOS);
-        } catch (exp) {
-            throw "BG96_GPS 0.2.x requires impOS 43 or above";
+        if (!("gnss" in hardware)) {
+            throw "The BG96_GPS library requires impOS 43 or above";
         }
     },
 
