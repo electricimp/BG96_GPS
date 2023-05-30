@@ -193,4 +193,4 @@ Nothing.
 
 ## License ##
 
-The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2022 Twilio.
+The BG96 GPS library is licensed under the [MIT License](LICENSE). Copyright 2023 Twilio.

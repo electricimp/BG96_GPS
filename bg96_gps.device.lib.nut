@@ -1,6 +1,6 @@
 /*
  * BG96_GPS library
- * Copyright 2022 Twilio
+ * Copyright 2023 Twilio
  *
  * MIT License
  * SPDX-License-Identifier: MIT
@@ -212,7 +212,7 @@ BG96_GPS <- {
             if (assistData) {
                 _session.assist.load(function(t) {
                     if (t.status != 0) {
-                        _notify("Assist data not loaded: " + t.message, null, t.status);
+                        _notify("Assist data not loaded. ", null, t.status);
                     } else {
                         // Prep for re-entry into function
                         opts.assistData = null;
