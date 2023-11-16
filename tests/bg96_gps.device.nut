@@ -1,6 +1,6 @@
 /*
  * BG96_GPS library
- * Copyright 2022 Twilio
+ * Copyright 2023 KORE Wireless
  *
  * MIT License
  * SPDX-License-Identifier: MIT
@@ -49,6 +49,7 @@ enum BG96_AT_ERROR_CODE {
     FILE_TOO_LARGE                  = "423",
     FILE_INVALID_PARAM              = "425",
     FILE_ALREADY_OPEN               = "426",
+    GPS_NOT_READY                   = "500",
     GPS_INVALID_PARAM               = "501",
     GPS_OPERATION_NOT_SUPPORTED     = "502",
     GPS_GNSS_SUBSYSTEM_BUSY         = "503",
@@ -84,6 +85,14 @@ enum BG96_GNSS_ON_DEFAULT {
     RETRY_TIME_SEC                  = 1     // Time to wait for modem to power up
 }
 
+enum BG95_GNSS_ON_DEFAULT {
+    MODE                = 1,    // Stand Alone is the only mode supported (1)
+    ACCURACY            = 3,
+    NUM_FIX_CHECKS      = 10,   // Num of checks after fix before powering down GPS (0 - continuous)
+    GET_LOC_FREQ_SEC    = 1,    // Check every x sec (1)
+    RETRY_TIME_SEC      = 1,    // Time to wait for modem to power up
+}
+
 enum BG96_GNSS_LOCATION_MODE {
     ZERO,   // <latitude>,<longitude> format: ddmm.mmmm N/S,dddmm.mmmm E/W
     ONE,    // <latitude>,<longitude> format: ddmm.mmmmmm,N/S,dddmm.mmmmmm,E/W
@@ -91,14 +100,10 @@ enum BG96_GNSS_LOCATION_MODE {
 }
 
 enum BG96_RESET_MODE {
-    //	Delete all assistance data except gpsOneXTRA data. Enforce a cold start after starting GNSS
-    COLD_START                      = 0,
-    // Do not delete any data. Perform hot start if the conditions are permitted after starting GNSS
-    HOT_START                       = 1,
-    // Delete some related data. Perform warm start if the conditions are permitted after starting GNSS
-    WARM_START                      = 2,
-    // Delete the gpsOneXTRA assistance data injected into GNSS engine
-    DELETE_DATA                     = 3
+    COLD_START          = 0, //	Delete all assistance data except gpsOneXTRA data. Enforce a cold start after starting GNSS
+    HOT_START           = 1, // Do not delete any data. Perform hot start if the conditions are permitted after starting GNSS
+    WARM_START          = 2, // Delete some related data. Perform warm start if the conditions are permitted after starting GNSS
+    DELETE_DATA         = 3  // Delete the gpsOneXTRA assistance data injected into GNSS engine (Not supported by BG95)
 }
 
 // Stale location data is often returned immediately after power up
@@ -128,6 +133,7 @@ BG96_GPS <- {
     _pollTimer = null,
     _impOSVersion = null,
     _minSuppportedImpOS = 43.0,
+    _modemModel = null,
 
     /*
      * PUBLIC FUNCTIONS
@@ -206,7 +212,7 @@ BG96_GPS <- {
             if (assistData) {
                 _session.assist.load(function(t) {
                     if (t.status != 0) {
-                        _notify("Assist data not loaded: " + t.message, null, t.status);
+                        _notify("Assist data not loaded. ", null, t.status);
                     } else {
                         // Prep for re-entry into function
                         opts.assistData = null;
@@ -240,11 +246,30 @@ BG96_GPS <- {
                 }
             }
 
-            local resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
+            local netData = imp.net.info();
+            foreach (i in netData.interface) {
+                if (i.type == "cell") {
+                    _modemModel = i.model;
+                }
+            }
+            _notify("Modem is " + _modemModel, null);
+
+            local resp;
+            if (_modemModel == "BG95-M3") {
+                gnssMode   = ("gnssMode" in opts)   ? opts.gnssMode   : BG95_GNSS_ON_DEFAULT.MODE;
+                accuracy   = ("accuracy" in opts)   ? opts.accuracy   : BG95_GNSS_ON_DEFAULT.ACCURACY;
+                numFixes   = ("numFixes" in opts)   ? opts.numFixes   : BG95_GNSS_ON_DEFAULT.NUM_FIX_CHECKS;
+                checkFreq  = ("checkFreq" in opts)  ? opts.checkFreq  : BG95_GNSS_ON_DEFAULT.GET_LOC_FREQ_SEC;
+                resp = _session.enable(gnssMode, accuracy, numFixes, checkFreq);
+            } else {
+                resp = _session.enable(gnssMode, posTime, accuracy, numFixes, checkFreq);
+            }
             if (resp.status != 0) {
                 // Error enabling GNSS
                 local status = resp.status.tostring();
-                if (status == BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING || status == BG96_AT_ERROR_CODE.GPS_XTRA_NOT_ENABLED) {
+                if (status == BG96_AT_ERROR_CODE.GPS_SESSION_IS_ONGOING ||
+                    status == BG96_AT_ERROR_CODE.GPS_XTRA_NOT_ENABLED ||
+                    status == BG96_AT_ERROR_CODE.GPS_NOT_READY) {
                     // Retry after 'retryTime'
                     imp.wakeup(retryTime, function() {
                         enableGNSS(opts);
@@ -563,7 +588,7 @@ BG96_GPS <- {
         }
     },
 
-    // Check we're running on a correct system
+    // Check we're running on a system that support GNSS
     _checkOS = function() {
         if (!("gnss" in hardware)) {
             throw "The BG96_GPS library requires impOS 43 or above";

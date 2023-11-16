@@ -1,6 +1,6 @@
 /*
  * BG96_GPS library
- * Copyright 2023 Twilio
+ * Copyright 2023 KORE Wireless
  *
  * MIT License
  * SPDX-License-Identifier: MIT
