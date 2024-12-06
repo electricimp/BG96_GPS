@@ -116,7 +116,7 @@ const BG96_GPS_EN_POLLING_TIMEOUT = 3;
  */
 BG96_GPS <- {
 
-    VERSION   = "1.0.1",
+    VERSION   = "1.0.2",
 
     /*
      * PUBLIC PROPERTIES
@@ -391,11 +391,11 @@ BG96_GPS <- {
         if (_session != null) {
             local t = _session.assist.read();
             local valid = (t.status == 0);
-            if ("xtradatadurtime" in t && t.xtradatadurtime == 0) valid = false;
-            local msg = valid ? "GNSS assist data valid" : "GNSS assist data invalid";
             local data = {};
+            data.time <- _getValidTime(t.injecteddatatime,t.xtradatadurtime);
+            valid = data.time > 0
             data.valid <- valid;
-            if (valid) data.time <- _getValidTime(t.injecteddatatime);
+            local msg = valid ? "GNSS assist data valid" : "GNSS assist data invalid";
             _notify(msg, data);
             return valid;
         } else {
@@ -599,7 +599,7 @@ BG96_GPS <- {
     // Get assist data remaining validity period in mins
     // 'uploadDate' is <= now, format: YYYY/MM/DD,hh:mm:ss
     // Returns -99 on error
-    _getValidTime = function(uploadDate, now = null) {
+    _getValidTime = function(uploadDate,validDuration, now = null) {
         local invalid = -1;
         // Convert date string to date table
         local date_parts = split(uploadDate, ",");      // YYYY/MM/DD,hh:mm:ss
@@ -615,8 +615,8 @@ BG96_GPS <- {
         if (now == null) now = date();
         if (now.year - old.year > 1) return invalid;
         if (now.year < old.year || (now.year == old.year && old.month > now.month)) return invalid;
-        local remaining = _getTime(now) - _getTime(old);
-        return (remaining < 10080 ? remaining : invalid);
+        local remaining = _getTime(old) + validDuration -_getTime(now) ;
+        return (remaining > 0 ? remaining : invalid);
     },
 
     // FROM 0.2.1

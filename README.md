@@ -1,11 +1,11 @@
-# BG96 GPS 1.0.1 #
+# BG96 GPS 1.0.2 #
 
 This library provides your application with access to GPS location data retrieved from a BG96 module. It is intended for use with the imp006.
 
 **To include this library to your project, add the following line to the top of your device code:**
 
 ```squirrel
-#require "BG96_GPS.device.lib.nut:1.0.1"
+#require "BG96_GPS.device.lib.nut:1.0.2"
 ```
 
 ![Build Status](https://cse-ci.electricimp.com/app/rest/builds/buildType:(id:Bg96gps_BuildAndTest)/statusIcon)
@@ -19,7 +19,7 @@ The library provides a singleton, *BG_96*, and therefore has no constructor. The
 This is a very simple example that enables GNSS on the BG96 and then polls and prints out the location fix every ten seconds:
 
 ```squirrel
-#require "BG96_GPS.device.lib.nut:1.0.1"
+#require "BG96_GPS.device.lib.nut:1.0.2"
 
 function onLocation(result) {
     if ("fix" in result) {
@@ -184,7 +184,8 @@ Delete any installed assist data. **Note** This call will also disable GNSS.
 Nothing.
 
 ## Release Notes ##
-
+* 1.0.2
+    * Corrected the isAssistDataValid function 
 * 1.0.1
     * Implement BG96 GNSS default states, reset modes as constants.
     * Better GNSS availability testing.
