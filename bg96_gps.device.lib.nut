@@ -401,6 +401,7 @@ BG96_GPS <- {
                 return valid;
             } else {
                 _notify("Assist data not present or invalid", null, t.status);
+                return false;
             }    
         } else {
             _notify("GNSS not enabled", null, 1);
