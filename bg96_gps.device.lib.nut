@@ -398,7 +398,7 @@ BG96_GPS <- {
                 _notify(msg, data);
                 return data.valid;
             } else {
-                local msg = "Assist data not present or invalid"
+                local msg = "Assist data not present or invalid";
                 data.valid <- false;
                 _notify(msg, data);
                 return data.valid;

@@ -385,7 +385,7 @@ BG96_GPS <- {
      *                 absent (false), or validity could not be determined (false).
      *                 NOTE Function also responds via the onEvent callback.
     */
-isAssistDataValid = function() {
+    isAssistDataValid = function() {
         _checkOS();
 
         if (_session != null) {
@@ -398,7 +398,7 @@ isAssistDataValid = function() {
                 _notify(msg, data);
                 return data.valid;
             } else {
-                local msg = "Assist data not present or invalid"
+                local msg = "Assist data not present or invalid";
                 data.valid <- false;
                 _notify(msg, data);
                 return data.valid;

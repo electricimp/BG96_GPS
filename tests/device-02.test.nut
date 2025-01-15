@@ -128,6 +128,7 @@ class GNSSTestCase extends ImpTestCase {
     function tearDown() {
 
         // TEST WE CAN DISABLE GNSS
+        imp.sleep(4); // A small delay is introduced here to ensure there is enough time to update the assist data in the modem; otherwise, test3 will fail.
         local result = BG96_GPS.disableGNSS();
         this.assert(result);
     }
