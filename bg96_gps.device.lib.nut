@@ -390,16 +390,18 @@ BG96_GPS <- {
 
         if (_session != null) {
             local t = _session.assist.read();
+            local data = {};
             if (t.status == 0) {
-                local data = {};
                 data.time <- _getValidTime(t.injecteddatatime,t.xtradatadurtime);
                 data.valid <- data.time > 0;
                 local msg = data.valid ? "GNSS assist data valid" : "GNSS assist data invalid";
                 _notify(msg, data);
                 return data.valid;
             } else {
-                _notify("Assist data not present or invalid", null, t.status);
-                return false;
+                local msg = "Assist data not present or invalid";
+                data.valid <- false;
+                _notify(msg, data);
+                return data.valid;
             }    
         } else {
             _notify("GNSS not enabled", null, 1);
